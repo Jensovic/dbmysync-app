@@ -1,0 +1,35 @@
+{
+    "name": "jensovic/dbmysync",
+    "description": "Database synchronization tool - Compare and sync MySQL databases across environments",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jensovic",
+            "email": "jensovic@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.2",
+        "ext-pdo": "*",
+        "ext-pdo_sqlite": "*",
+        "guzzlehttp/guzzle": "^7.8",
+        "twig/twig": "^3.8"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Jensovic\\DbMySync\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Jensovic\\DbMySync\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
+

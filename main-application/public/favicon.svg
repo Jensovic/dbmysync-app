@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Blue circular background -->
+  <circle cx="50" cy="50" r="48" fill="#1E90FF"/>
+
+  <!-- White clockwise arrow (top-right) -->
+  <path d="M 65 35 A 20 20 0 1 1 50 25"
+        stroke="white"
+        stroke-width="8"
+        fill="none"
+        stroke-linecap="round"/>
+  <polygon points="50,25 45,18 56,22" fill="white"/>
+
+  <!-- White counter-clockwise arrow (bottom-left) -->
+  <path d="M 35 65 A 20 20 0 1 1 50 75"
+        stroke="white"
+        stroke-width="8"
+        fill="none"
+        stroke-linecap="round"/>
+  <polygon points="50,75 55,82 44,78" fill="white"/>
+</svg>
+

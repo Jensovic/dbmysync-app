@@ -1,0 +1,31 @@
+{
+    "name": "jensovic/dbmysync-addin",
+    "description": "Database synchronization endpoint - Provides REST API to expose MySQL database structure and keys for comparison",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Jensovic",
+            "email": "jensovic@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Jensovic\\DbMySyncAddin\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Jensovic\\DbMySyncAddin\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
+

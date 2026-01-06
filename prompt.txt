@@ -1,0 +1,17 @@
+Ich habe oft Applikationen, die eine OFFLINE mysql Datenbank (localhost) und eine ONLINE mysql Datenbank (Web-Provider, gekapselte Umgebung, Kein db-Zugriff von hier) haben. Die Unterschiede in den Datenbanken entstehen durch die Weiterentwicklung offline und durch die Content-Eingabe Online.
+
+Die Strukturellen Probleme entstehen dann, wenn ich vergesse, Databank-Elemente, die ich offline hinzufüge, online zu migrieren.
+
+Da ich mit meinem lokalen Rechner NICHT auf IONOS zugriff habe (kein SSH verfügbar) und von dort aus nicht auf den Localhost komme, habe ich mir überlegt, dass wir doch einfach zusammen eine Art "addin" für meine Tools entwickeln können.
+
+Ich stelle mir das so vor: Das Addin stellt einen HTTP Endpoint zur Verfügung, der in der Lage ist, Informationen über die Datenbankstruktur und Keys, vielleicht sogar dem Tabelleninhalt zu geben und so darzustellen, dass man das abrufen kann.
+
+Damit muss ich in meinem zentralen Tool, das auf dem Localhost läuft (und das über http(s) auf beide Umgebungen kommt) nur noch Informationen über die Adresse bekommen, eine Art Secret transportieren und wäre dann in der Lage, Fehlende Spalten, Keys und ggf. sogar Content zu erkennen.
+
+Denk das mal mit und überlege, wie das gehen könnte.
+
+Meiner Meinung nach brauchen wir:
+
+1) Einen Endpoint, den wir in meine Tools einbinden (1x offline, 1x online). Das sind die DbMySync Endpoints
+2) Ein Zentrales Tool, welches diese Endpoints ansteuern, interpretieren und auslesen kann und die Informationen dann verwaltet. Dieses Tool soll DbMySync heißen
+

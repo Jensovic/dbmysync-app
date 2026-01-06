@@ -1,0 +1,35 @@
+# Vendor directories
+vendor/
+node_modules/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Composer
+composer.phar
+
+# PHPUnit
+.phpunit.result.cache
+

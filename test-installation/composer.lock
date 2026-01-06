@@ -1,0 +1,62 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "5bd54e813a4af8631985d14c1eeb2801",
+    "packages": [
+        {
+            "name": "jensovic/dbmysync-addin",
+            "version": "v1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Jensovic/dbmysync-addin.git",
+                "reference": "b6e3f67825c258edb3bf45dd60fac692796137a7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Jensovic/dbmysync-addin/zipball/b6e3f67825c258edb3bf45dd60fac692796137a7",
+                "reference": "b6e3f67825c258edb3bf45dd60fac692796137a7",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=8.2"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Jensovic\\DbMySyncAddin\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jensovic",
+                    "email": "jensovic@gmail.com"
+                }
+            ],
+            "description": "Database synchronization endpoint - Provides REST API to expose MySQL database structure and keys for comparison",
+            "support": {
+                "issues": "https://github.com/Jensovic/dbmysync-addin/issues",
+                "source": "https://github.com/Jensovic/dbmysync-addin/tree/v1.0.0"
+            },
+            "time": "2026-01-06T12:02:23+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": {},
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {},
+    "platform-dev": {},
+    "plugin-api-version": "2.6.0"
+}

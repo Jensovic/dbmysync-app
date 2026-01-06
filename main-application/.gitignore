@@ -1,0 +1,9 @@
+/vendor/
+composer.lock
+.env
+/data/*.db
+/data/*.db-journal
+.DS_Store
+.idea/
+*.log
+

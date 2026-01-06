@@ -1,0 +1,7 @@
+{
+    "name": "test/dbmysync-test",
+    "type": "project",
+    "require": {
+        "jensovic/dbmysync-addin": "^1.0"
+    }
+}
