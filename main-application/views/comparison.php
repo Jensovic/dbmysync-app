@@ -1,9 +1,12 @@
 <?php
 $title = 'Comparison - ' . htmlspecialchars($pair['name']);
 
-// Initialize SQL Generator with schemas
+// Initialize SQL Generator with schemas (only if schemas are available)
 use Jensovic\DbMySync\SqlGenerator;
-$sqlGenerator = new SqlGenerator($offlineSchema, $onlineSchema);
+$sqlGenerator = null;
+if ($offlineSchema !== null && $onlineSchema !== null) {
+    $sqlGenerator = new SqlGenerator($offlineSchema, $onlineSchema);
+}
 
 ob_start();
 ?>
@@ -405,6 +408,7 @@ ob_start();
 <!-- Toast Container -->
 <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 
+<?php if ($sqlGenerator !== null && $differences !== null): ?>
 <script>
 // Store SQL data - generate for all tables
 const allSqlData = {
@@ -635,6 +639,7 @@ document.addEventListener('keydown', (e) => {
     }
 });
 </script>
+<?php endif; ?>
 
 <?php
 $content = ob_get_clean();

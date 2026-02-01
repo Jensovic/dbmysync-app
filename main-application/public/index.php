@@ -17,6 +17,12 @@ Database::getInstance();
 $action = $_GET['action'] ?? 'dashboard';
 $id = $_GET['id'] ?? null;
 
+// Handle AJAX requests
+if (isset($_GET['ajax'])) {
+    handleAjax();
+    exit;
+}
+
 // Handle POST requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     handlePost();
@@ -28,32 +34,65 @@ switch ($action) {
     case 'dashboard':
         showDashboard();
         break;
-    
+
     case 'add':
         showAddForm();
         break;
-    
+
     case 'edit':
         showEditForm($id);
         break;
-    
+
     case 'compare':
         showComparison($id);
         break;
-    
+
     case 'delete':
         handleDelete($id);
         break;
-    
+
     default:
         showDashboard();
+}
+
+function handleAjax()
+{
+    header('Content-Type: application/json');
+
+    $ajaxAction = $_GET['ajax'] ?? '';
+
+    if ($ajaxAction === 'validate_endpoint') {
+        $url = $_GET['url'] ?? '';
+        $secret = $_GET['secret'] ?? '';
+
+        if (empty($url)) {
+            echo json_encode(['success' => false, 'message' => 'URL is required']);
+            return;
+        }
+
+        $client = new EndpointClient();
+        $result = $client->testConnectionDetailed($url, $secret);
+
+        // Map status to success flag
+        $success = ($result['status'] === 'success');
+
+        echo json_encode([
+            'success' => $success,
+            'message' => $result['message'],
+            'status' => $result['status'],
+            'error' => $result['error']
+        ]);
+        return;
+    }
+
+    echo json_encode(['success' => false, 'message' => 'Unknown action']);
 }
 
 function handlePost()
 {
     $toolPair = new ToolPair();
     $postAction = $_POST['action'] ?? '';
-    
+
     if ($postAction === 'create') {
         $toolPair->create($_POST);
         header('Location: index.php');
