@@ -33,3 +33,7 @@ composer.phar
 # PHPUnit
 .phpunit.result.cache
 
+# Endpoint is a separate git repository
+endpoint/.git/
+endpoint/vendor/
+endpoint/composer.lock
