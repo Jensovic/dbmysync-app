@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/helpers.php';
+
 $title = 'Comparison - ' . htmlspecialchars($pair['name']);
 
 // Initialize SQL Generator with schemas (only if schemas are available)
@@ -36,8 +38,8 @@ ob_start();
 </style>
 
 <div style="margin-bottom: 20px;">
-    <a href="index.php" class="btn">← Back to Dashboard</a>
-    <a href="?action=compare&id=<?= $pair['id'] ?>" class="btn" style="margin-left: 10px;">🔄 Refresh</a>
+    <a href="index.php" class="btn btn-neutral btn-icon" <?= iconButtonAttrs('Back to Dashboard') ?>><?= icon('back', 18) ?></a>
+    <a href="?action=compare&id=<?= $pair['id'] ?>" class="btn btn-icon" style="margin-left: 6px;" <?= iconButtonAttrs('Refresh comparison') ?>><?= icon('refresh', 18) ?></a>
 </div>
 
 <div class="card">
@@ -76,11 +78,13 @@ ob_start();
                 Generate SQL statements to synchronize your databases:
             </p>
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button onclick="showSqlModal('env1_to_env2', null)" class="btn btn-success">
-                    📝 SQL to adjust <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
+                <button onclick="showSqlModal('env1_to_env2', null)" class="btn btn-success"
+                        title="Generate SQL to adjust <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>">
+                    <?= icon('sql') ?><?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
                 </button>
-                <button onclick="showSqlModal('env2_to_env1', null)" class="btn">
-                    📝 SQL to adjust <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
+                <button onclick="showSqlModal('env2_to_env1', null)" class="btn"
+                        title="Generate SQL to adjust <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>">
+                    <?= icon('sql') ?><?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
                 </button>
             </div>
         </div>
@@ -103,8 +107,10 @@ ob_start();
                         <tr>
                             <td><code><?= htmlspecialchars($table) ?></code></td>
                             <td>
-                                <button onclick="showSqlModal('env1_to_env2', '<?= htmlspecialchars($table) ?>', null, 'missing_table')" class="btn btn-small btn-success">
-                                    CREATE TABLE for <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
+                                <button onclick="showSqlModal('env1_to_env2', '<?= htmlspecialchars($table) ?>', null, 'missing_table')"
+                                        class="btn btn-small btn-success"
+                                        title="CREATE TABLE for <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>">
+                                    <?= icon('table-add') ?><?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
                                 </button>
                             </td>
                         </tr>
@@ -131,8 +137,10 @@ ob_start();
                         <tr>
                             <td><code><?= htmlspecialchars($table) ?></code></td>
                             <td>
-                                <button onclick="showSqlModal('env2_to_env1', '<?= htmlspecialchars($table) ?>', null, 'missing_table')" class="btn btn-small">
-                                    CREATE TABLE for <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
+                                <button onclick="showSqlModal('env2_to_env1', '<?= htmlspecialchars($table) ?>', null, 'missing_table')"
+                                        class="btn btn-small"
+                                        title="CREATE TABLE for <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>">
+                                    <?= icon('table-add') ?><?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
                                 </button>
                             </td>
                         </tr>
@@ -149,11 +157,15 @@ ob_start();
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 style="margin: 0;">🔧 Table: <?= htmlspecialchars($tableName) ?></h2>
                     <div style="display: flex; gap: 10px;">
-                        <button onclick="showSqlModal('env1_to_env2', '<?= htmlspecialchars($tableName) ?>')" class="btn btn-small btn-success">
-                            SQL for <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
+                        <button onclick="showSqlModal('env1_to_env2', '<?= htmlspecialchars($tableName) ?>')"
+                                class="btn btn-small btn-success"
+                                title="SQL for <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>">
+                            <?= icon('sql') ?><?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
                         </button>
-                        <button onclick="showSqlModal('env2_to_env1', '<?= htmlspecialchars($tableName) ?>')" class="btn btn-small">
-                            SQL for <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
+                        <button onclick="showSqlModal('env2_to_env1', '<?= htmlspecialchars($tableName) ?>')"
+                                class="btn btn-small"
+                                title="SQL for <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>">
+                            <?= icon('sql') ?><?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
                         </button>
                     </div>
                 </div>
@@ -179,8 +191,10 @@ ob_start();
                                     <td><?= $col['nullable'] ? 'YES' : 'NO' ?></td>
                                     <td><?= htmlspecialchars($col['default'] ?? 'NULL') ?></td>
                                     <td>
-                                        <button onclick="showSqlModal('env1_to_env2', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($col['name']) ?>', 'missing_column')" class="btn btn-small btn-success">
-                                            SQL for <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
+                                        <button onclick="showSqlModal('env1_to_env2', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($col['name']) ?>', 'missing_column')"
+                                                class="btn btn-small btn-success"
+                                                title="SQL for <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>">
+                                            <?= icon('sql') ?><?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
                                         </button>
                                     </td>
                                 </tr>
@@ -210,8 +224,10 @@ ob_start();
                                     <td><?= $col['nullable'] ? 'YES' : 'NO' ?></td>
                                     <td><?= htmlspecialchars($col['default'] ?? 'NULL') ?></td>
                                     <td>
-                                        <button onclick="showSqlModal('env2_to_env1', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($col['name']) ?>', 'missing_column')" class="btn btn-small">
-                                            SQL for <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
+                                        <button onclick="showSqlModal('env2_to_env1', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($col['name']) ?>', 'missing_column')"
+                                                class="btn btn-small"
+                                                title="SQL for <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>">
+                                            <?= icon('sql') ?><?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
                                         </button>
                                     </td>
                                 </tr>
@@ -239,11 +255,15 @@ ob_start();
                                     </ul>
                                 </div>
                                 <div style="display: flex; gap: 5px; margin-left: 15px;">
-                                    <button onclick="showSqlModal('env1_to_env2', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($colName) ?>', 'column_difference')" class="btn btn-small btn-success">
-                                        SQL for <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
+                                    <button onclick="showSqlModal('env1_to_env2', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($colName) ?>', 'column_difference')"
+                                            class="btn btn-small btn-success"
+                                            title="SQL for <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>">
+                                        <?= icon('sql') ?><?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
                                     </button>
-                                    <button onclick="showSqlModal('env2_to_env1', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($colName) ?>', 'column_difference')" class="btn btn-small">
-                                        SQL for <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
+                                    <button onclick="showSqlModal('env2_to_env1', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($colName) ?>', 'column_difference')"
+                                            class="btn btn-small"
+                                            title="SQL for <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>">
+                                        <?= icon('sql') ?><?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
                                     </button>
                                 </div>
                             </div>
@@ -270,8 +290,10 @@ ob_start();
                                     <td><?= $idx['unique'] ? '<span class="badge badge-warning">UNIQUE</span>' : 'INDEX' ?></td>
                                     <td><?= implode(', ', array_map('htmlspecialchars', $idx['columns'])) ?></td>
                                     <td>
-                                        <button onclick="showSqlModal('env1_to_env2', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($idx['name']) ?>', 'missing_index')" class="btn btn-small btn-success">
-                                            SQL for <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
+                                        <button onclick="showSqlModal('env1_to_env2', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($idx['name']) ?>', 'missing_index')"
+                                                class="btn btn-small btn-success"
+                                                title="SQL for <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>">
+                                            <?= icon('sql') ?><?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
                                         </button>
                                     </td>
                                 </tr>
@@ -299,8 +321,10 @@ ob_start();
                                     <td><?= $idx['unique'] ? '<span class="badge badge-warning">UNIQUE</span>' : 'INDEX' ?></td>
                                     <td><?= implode(', ', array_map('htmlspecialchars', $idx['columns'])) ?></td>
                                     <td>
-                                        <button onclick="showSqlModal('env2_to_env1', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($idx['name']) ?>', 'missing_index')" class="btn btn-small">
-                                            SQL for <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
+                                        <button onclick="showSqlModal('env2_to_env1', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($idx['name']) ?>', 'missing_index')"
+                                                class="btn btn-small"
+                                                title="SQL for <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>">
+                                            <?= icon('sql') ?><?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
                                         </button>
                                     </td>
                                 </tr>
@@ -328,8 +352,10 @@ ob_start();
                                     <td><?= implode(', ', array_map('htmlspecialchars', $fk['columns'])) ?></td>
                                     <td><?= htmlspecialchars($fk['referenced_table']) ?> (<?= implode(', ', array_map('htmlspecialchars', $fk['referenced_columns'])) ?>)</td>
                                     <td>
-                                        <button onclick="showSqlModal('env1_to_env2', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($fk['name']) ?>', 'missing_foreign_key')" class="btn btn-small btn-success">
-                                            SQL for <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
+                                        <button onclick="showSqlModal('env1_to_env2', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($fk['name']) ?>', 'missing_foreign_key')"
+                                                class="btn btn-small btn-success"
+                                                title="SQL for <?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>">
+                                            <?= icon('sql') ?><?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?>
                                         </button>
                                     </td>
                                 </tr>
@@ -357,8 +383,10 @@ ob_start();
                                     <td><?= implode(', ', array_map('htmlspecialchars', $fk['columns'])) ?></td>
                                     <td><?= htmlspecialchars($fk['referenced_table']) ?> (<?= implode(', ', array_map('htmlspecialchars', $fk['referenced_columns'])) ?>)</td>
                                     <td>
-                                        <button onclick="showSqlModal('env2_to_env1', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($fk['name']) ?>', 'missing_foreign_key')" class="btn btn-small">
-                                            SQL for <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
+                                        <button onclick="showSqlModal('env2_to_env1', '<?= htmlspecialchars($tableName) ?>', '<?= htmlspecialchars($fk['name']) ?>', 'missing_foreign_key')"
+                                                class="btn btn-small"
+                                                title="SQL for <?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>">
+                                            <?= icon('sql') ?><?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?>
                                         </button>
                                     </td>
                                 </tr>
@@ -392,15 +420,16 @@ ob_start();
 <!-- SQL Modal -->
 <div id="sqlModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
     <div style="position: relative; max-width: 900px; margin: 50px auto; background: white; border-radius: 8px; padding: 30px; max-height: 80vh; overflow-y: auto;">
-        <button onclick="closeSqlModal()" style="position: absolute; top: 15px; right: 15px; background: #e74c3c; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">✕ Close</button>
+        <button onclick="closeSqlModal()" class="btn btn-danger btn-icon"
+                style="position: absolute; top: 15px; right: 15px;" <?= iconButtonAttrs('Close') ?>><?= icon('close', 18) ?></button>
 
         <h2 id="sqlModalTitle" style="margin-bottom: 20px;">Migration SQL</h2>
 
         <div id="sqlModalContent"></div>
 
         <div style="margin-top: 20px;">
-            <button onclick="copyAllSql()" class="btn btn-success">📋 Copy All SQL</button>
-            <button onclick="closeSqlModal()" class="btn" style="margin-left: 10px;">Close</button>
+            <button onclick="copyAllSql()" class="btn btn-success" title="Copy all SQL statements"><?= icon('copy') ?>Copy All SQL</button>
+            <button onclick="closeSqlModal()" class="btn btn-neutral btn-icon" style="margin-left: 10px;" <?= iconButtonAttrs('Close') ?>><?= icon('close', 18) ?></button>
         </div>
     </div>
 </div>
@@ -561,7 +590,7 @@ function showSqlModal(direction, tableName = null, columnName = null, diffType =
             html += escapeHtml(stmt.sql);
             html += '</pre>';
 
-            html += `<button onclick="copySql(${index})" class="btn btn-small" style="margin-top: 10px;">📋 Copy</button>`;
+            html += `<button onclick="copySql(${index})" class="btn btn-small btn-icon" style="margin-top: 10px;" title="Copy statement" aria-label="Copy statement"><img src="icons/copy.svg" class="icon" width="16" height="16" alt="" aria-hidden="true"></button>`;
             html += '</div>';
         });
 

@@ -76,14 +76,15 @@ class SchemaReader
     private function getColumns($table)
     {
         $sql = "
-            SELECT 
+            SELECT
                 COLUMN_NAME as name,
                 COLUMN_TYPE as type,
                 IS_NULLABLE as nullable,
                 COLUMN_DEFAULT as default_value,
                 EXTRA as extra,
                 CHARACTER_SET_NAME as charset,
-                COLLATION_NAME as collation
+                COLLATION_NAME as collation,
+                ORDINAL_POSITION as position
             FROM INFORMATION_SCHEMA.COLUMNS
             WHERE TABLE_SCHEMA = :database
             AND TABLE_NAME = :table
@@ -101,7 +102,8 @@ class SchemaReader
                 'default' => $col['default_value'],
                 'extra' => $col['extra'],
                 'charset' => $col['charset'],
-                'collation' => $col['collation']
+                'collation' => $col['collation'],
+                'position' => (int) $col['position']
             ];
         }, $stmt->fetchAll());
     }

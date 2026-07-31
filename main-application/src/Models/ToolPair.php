@@ -20,11 +20,58 @@ class ToolPair
     public function getAll(): array
     {
         $stmt = $this->db->query("
-            SELECT * FROM tool_pairs 
-            WHERE active = 1 
-            ORDER BY name ASC
+            SELECT tp.*, g.name AS group_name, g.sort_order AS group_sort_order
+            FROM tool_pairs tp
+            LEFT JOIN groups g ON g.id = tp.group_id
+            WHERE tp.active = 1
+            ORDER BY tp.name ASC
         ");
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Get all tool pairs bucketed by group.
+     *
+     * Returns a list of ['id' => ?int, 'name' => string, 'pairs' => array],
+     * groups first (by sort order, then name), ungrouped pairs last.
+     */
+    public function getAllGrouped(): array
+    {
+        $buckets = [];
+        $ungrouped = [];
+
+        foreach ($this->getAll() as $pair) {
+            if ($pair['group_id'] === null) {
+                $ungrouped[] = $pair;
+                continue;
+            }
+
+            $key = (int) $pair['group_id'];
+            if (!isset($buckets[$key])) {
+                $buckets[$key] = [
+                    'id' => $key,
+                    'name' => $pair['group_name'],
+                    'sort_order' => (int) ($pair['group_sort_order'] ?? 0),
+                    'pairs' => []
+                ];
+            }
+            $buckets[$key]['pairs'][] = $pair;
+        }
+
+        usort($buckets, function ($a, $b) {
+            return [$a['sort_order'], $a['name']] <=> [$b['sort_order'], $b['name']];
+        });
+
+        if (!empty($ungrouped)) {
+            $buckets[] = [
+                'id' => null,
+                'name' => 'Ohne Gruppe',
+                'sort_order' => PHP_INT_MAX,
+                'pairs' => $ungrouped
+            ];
+        }
+
+        return $buckets;
     }
 
     /**
@@ -33,8 +80,10 @@ class ToolPair
     public function getById(int $id): ?array
     {
         $stmt = $this->db->prepare("
-            SELECT * FROM tool_pairs 
-            WHERE id = :id AND active = 1
+            SELECT tp.*, g.name AS group_name
+            FROM tool_pairs tp
+            LEFT JOIN groups g ON g.id = tp.group_id
+            WHERE tp.id = :id AND tp.active = 1
         ");
         $stmt->execute(['id' => $id]);
         $result = $stmt->fetch();
@@ -48,16 +97,17 @@ class ToolPair
     {
         $stmt = $this->db->prepare("
             INSERT INTO tool_pairs (
-                name, env1_name, env1_url, env1_secret,
+                name, group_id, env1_name, env1_url, env1_secret,
                 env2_name, env2_url, env2_secret
             ) VALUES (
-                :name, :env1_name, :env1_url, :env1_secret,
+                :name, :group_id, :env1_name, :env1_url, :env1_secret,
                 :env2_name, :env2_url, :env2_secret
             )
         ");
 
         $stmt->execute([
             'name' => $data['name'],
+            'group_id' => $data['group_id'] ?? null,
             'env1_name' => $data['env1_name'] ?? 'Dev',
             'env1_url' => $data['env1_url'],
             'env1_secret' => $data['env1_secret'],
@@ -77,6 +127,7 @@ class ToolPair
         $stmt = $this->db->prepare("
             UPDATE tool_pairs SET
                 name = :name,
+                group_id = :group_id,
                 env1_name = :env1_name,
                 env1_url = :env1_url,
                 env1_secret = :env1_secret,
@@ -90,6 +141,7 @@ class ToolPair
         return $stmt->execute([
             'id' => $id,
             'name' => $data['name'],
+            'group_id' => $data['group_id'] ?? null,
             'env1_name' => $data['env1_name'] ?? 'Dev',
             'env1_url' => $data['env1_url'],
             'env1_secret' => $data['env1_secret'],
@@ -97,6 +149,55 @@ class ToolPair
             'env2_url' => $data['env2_url'],
             'env2_secret' => $data['env2_secret']
         ]);
+    }
+
+    /**
+     * Duplicate a tool pair including group, URLs and secrets.
+     *
+     * @return int|null ID of the new tool pair, or null if the source does not exist
+     */
+    public function duplicate(int $id): ?int
+    {
+        $source = $this->getById($id);
+        if (!$source) {
+            return null;
+        }
+
+        $data = $source;
+        $data['name'] = $this->makeUniqueName($source['name']);
+
+        return $this->create($data);
+    }
+
+    /**
+     * Build a name that is not yet taken, e.g. "My CMS (Kopie 2)"
+     */
+    private function makeUniqueName(string $baseName): string
+    {
+        // Strip an existing "(Kopie)" / "(Kopie N)" suffix so copies of copies
+        // do not accumulate the suffix over and over again.
+        $baseName = preg_replace('/\s*\(Kopie(?:\s+\d+)?\)$/u', '', $baseName);
+
+        $candidate = $baseName . ' (Kopie)';
+        $counter = 2;
+
+        while ($this->nameExists($candidate)) {
+            $candidate = $baseName . ' (Kopie ' . $counter . ')';
+            $counter++;
+        }
+
+        return $candidate;
+    }
+
+    /**
+     * Check whether a name is already used (including soft-deleted pairs,
+     * because the UNIQUE constraint covers those too)
+     */
+    private function nameExists(string $name): bool
+    {
+        $stmt = $this->db->prepare("SELECT 1 FROM tool_pairs WHERE name = :name");
+        $stmt->execute(['name' => $name]);
+        return (bool) $stmt->fetchColumn();
     }
 
     /**

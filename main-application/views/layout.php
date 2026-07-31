@@ -51,7 +51,34 @@
         .btn-danger { background: #e74c3c; }
         .btn-danger:hover { background: #c0392b; }
         .btn-small { padding: 6px 12px; font-size: 13px; }
-        
+        .btn-neutral { background: #7f8c8d; }
+        .btn-neutral:hover { background: #6c7a7b; }
+
+        /* Icons: 24x24 SVGs, white strokes on transparent background */
+        .icon {
+            display: inline-block;
+            vertical-align: -0.18em;
+            flex-shrink: 0;
+        }
+        .btn .icon { margin-right: 8px; }
+
+        /* Icon-only buttons: square, no label */
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            line-height: 0;
+        }
+        .btn-icon .icon { margin-right: 0; }
+        .btn-icon.btn-small { padding: 6px; }
+
+        .btn-group {
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+        }
+
         .card {
             background: white;
             border-radius: 8px;
@@ -133,7 +160,62 @@
         .badge-success { background: #d4edda; color: #155724; }
         .badge-danger { background: #f8d7da; color: #721c24; }
         .badge-warning { background: #fff3cd; color: #856404; }
-    </style>
+
+        /* --------------------------------------------------------------
+           Dashboard groups + tool pair table
+           Must stay after .card / table so these rules win over `.card h2`
+           and the generic table styles (equal specificity, later wins).
+           -------------------------------------------------------------- */
+        .group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        .card .group-header h2 {
+            margin: 0;
+            font-size: 18px;
+            line-height: 1;
+        }
+        /* The white icon is recoloured via a mask, so it matches the heading exactly */
+        .group-header .group-icon {
+            display: block;
+            width: 20px;
+            height: 20px;
+            margin-top: -1px;
+            background-color: #2c3e50;
+            -webkit-mask: url("icons/group.svg") no-repeat center / contain;
+            mask: url("icons/group.svg") no-repeat center / contain;
+            flex-shrink: 0;
+        }
+        .group-header .group-count {
+            margin-left: auto;
+            color: #7f8c8d;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1;
+        }
+        .group-ungrouped .group-header h2 { color: #7f8c8d; font-weight: 500; }
+        .group-ungrouped .group-header .group-icon { background-color: #95a5a6; }
+
+        /* Fixed columns so long URLs can be truncated */
+        .table-pairs { table-layout: fixed; }
+        .table-pairs td { word-break: break-word; }
+        .table-pairs .col-name { width: 20%; }
+        .table-pairs .col-env { width: 26%; }
+        .table-pairs .col-modified { width: 13%; }
+        .table-pairs .col-actions { width: 15%; }
+        .table-pairs .btn-group { flex-wrap: nowrap; }
+        .cell-url {
+            display: block;
+            font-size: 11px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+</style>
 </head>
 <body>
     <header>

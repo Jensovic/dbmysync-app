@@ -123,6 +123,16 @@ class SqlGenerator
 
         // Add missing columns
         if (!empty($tableDiff[$missingColsKey]) && (!$filterType || $filterType === 'missing_column')) {
+            // When the whole set is generated, statements run in source order, so a column
+            // added earlier may serve as the anchor for the next one. When a single column
+            // is generated, only columns that already exist in the target are valid anchors.
+            $anchors = $this->computeColumnAnchors(
+                $tableName,
+                $tableDiff[$missingColsKey],
+                $targetEnv,
+                $filterColumn === null
+            );
+
             foreach ($tableDiff[$missingColsKey] as $col) {
                 if ($filterColumn && $col['name'] !== $filterColumn) {
                     continue;
@@ -131,7 +141,7 @@ class SqlGenerator
                     'type' => 'add_column',
                     'table' => $tableName,
                     'column' => $col['name'],
-                    'sql' => $this->generateAddColumnSql($tableName, $col)
+                    'sql' => $this->generateAddColumnSql($tableName, $col, $anchors[$col['name']] ?? '')
                 ];
             }
         }
@@ -187,8 +197,10 @@ class SqlGenerator
     
     /**
      * Generate ADD COLUMN statement
+     *
+     * @param string $position Position clause, e.g. " FIRST" or " AFTER `id`" (empty = append at end)
      */
-    private function generateAddColumnSql(string $table, array $col): string
+    private function generateAddColumnSql(string $table, array $col, string $position = ''): string
     {
         $nullable = $col['nullable'] ? 'NULL' : 'NOT NULL';
         $default = '';
@@ -197,7 +209,91 @@ class SqlGenerator
             $default = " DEFAULT " . $this->quoteDefault($col['default']);
         }
 
-        return "ALTER TABLE `{$table}` ADD COLUMN `{$col['name']}` {$col['type']} {$nullable}{$default};";
+        return "ALTER TABLE `{$table}` ADD COLUMN `{$col['name']}` {$col['type']} {$nullable}{$default}{$position};";
+    }
+
+    /**
+     * Determine the position clause (FIRST / AFTER `x`) for every missing column,
+     * so that new columns land at the same spot as in the source environment.
+     *
+     * @param array $missingCols Columns missing in the target, in source order
+     * @param bool  $chained     Whether previously added columns count as anchors
+     * @return array<string, string> Column name => position clause
+     */
+    private function computeColumnAnchors(string $table, array $missingCols, string $targetEnv, bool $chained): array
+    {
+        $sourceSchema = $targetEnv === 'env2' ? $this->env1Schema : $this->env2Schema;
+        $targetSchema = $targetEnv === 'env2' ? $this->env2Schema : $this->env1Schema;
+
+        $sourceTable = $this->findTable($sourceSchema, $table);
+        $targetTable = $this->findTable($targetSchema, $table);
+
+        if (!$sourceTable || !$targetTable) {
+            // Without both sides we cannot place the column reliably - append at the end
+            return [];
+        }
+
+        // Source column names in their real order
+        $sourceOrder = array_column($this->sortByPosition($sourceTable['columns'] ?? []), 'name');
+
+        // Columns that exist in the target right now
+        $present = array_flip(array_column($targetTable['columns'] ?? [], 'name'));
+
+        $missing = array_flip(array_column($missingCols, 'name'));
+
+        $anchors = [];
+        foreach ($sourceOrder as $index => $name) {
+            if (!isset($missing[$name])) {
+                continue;
+            }
+
+            // Walk backwards to the nearest preceding column that exists in the target
+            $anchor = null;
+            for ($i = $index - 1; $i >= 0; $i--) {
+                if (isset($present[$sourceOrder[$i]])) {
+                    $anchor = $sourceOrder[$i];
+                    break;
+                }
+            }
+
+            $anchors[$name] = $anchor === null ? ' FIRST' : " AFTER `{$anchor}`";
+
+            if ($chained) {
+                // This column exists once the previous statement has run
+                $present[$name] = true;
+            }
+        }
+
+        return $anchors;
+    }
+
+    /**
+     * Sort columns by their ordinal position.
+     * Falls back to the given array order for endpoints that do not report a position.
+     */
+    private function sortByPosition(array $columns): array
+    {
+        $indexed = [];
+        foreach ($columns as $index => $col) {
+            $indexed[] = [$col['position'] ?? ($index + 1), $index, $col];
+        }
+
+        usort($indexed, fn($a, $b) => [$a[0], $a[1]] <=> [$b[0], $b[1]]);
+
+        return array_column($indexed, 2);
+    }
+
+    /**
+     * Find a table definition in a schema
+     */
+    private function findTable(array $schema, string $tableName): ?array
+    {
+        foreach ($schema as $table) {
+            if ($table['name'] === $tableName) {
+                return $table;
+            }
+        }
+        return null;
     }
 
     /**
@@ -209,14 +305,7 @@ class SqlGenerator
         // Get the complete column definition from source environment
         $sourceSchema = $targetEnv === 'env2' ? $this->env1Schema : $this->env2Schema;
 
-        // Find the table in the schema (schema is a numeric array of tables)
-        $sourceTable = null;
-        foreach ($sourceSchema as $tbl) {
-            if ($tbl['name'] === $table) {
-                $sourceTable = $tbl;
-                break;
-            }
-        }
+        $sourceTable = $this->findTable($sourceSchema, $table);
 
         // Find the column in the source table
         $sourceColumn = null;
@@ -368,13 +457,7 @@ class SqlGenerator
         // Get table from source schema
         $sourceSchema = $sourceEnv === 'env1' ? $this->env1Schema : $this->env2Schema;
 
-        $sourceTable = null;
-        foreach ($sourceSchema as $tbl) {
-            if ($tbl['name'] === $tableName) {
-                $sourceTable = $tbl;
-                break;
-            }
-        }
+        $sourceTable = $this->findTable($sourceSchema, $tableName);
 
         if (!$sourceTable) {
             return [

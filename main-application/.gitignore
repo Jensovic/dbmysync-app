@@ -3,6 +3,7 @@ composer.lock
 .env
 /data/*.db
 /data/*.db-journal
+/data/*.backup-*
 .DS_Store
 .idea/
 *.log

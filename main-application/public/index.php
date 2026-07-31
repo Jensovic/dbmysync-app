@@ -6,6 +6,7 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use Jensovic\DbMySync\Database;
+use Jensovic\DbMySync\Models\Group;
 use Jensovic\DbMySync\Models\ToolPair;
 use Jensovic\DbMySync\EndpointClient;
 use Jensovic\DbMySync\SchemaComparator;
@@ -45,6 +46,10 @@ switch ($action) {
 
     case 'compare':
         showComparison($id);
+        break;
+
+    case 'duplicate':
+        handleDuplicate($id);
         break;
 
     case 'delete':
@@ -91,15 +96,40 @@ function handleAjax()
 function handlePost()
 {
     $toolPair = new ToolPair();
+    $group = new Group();
     $postAction = $_POST['action'] ?? '';
 
+    $data = $_POST;
+    $data['group_id'] = $group->resolveOrCreate($_POST['group_name'] ?? null);
+
     if ($postAction === 'create') {
-        $toolPair->create($_POST);
+        $toolPair->create($data);
+        $group->deleteUnused();
         header('Location: index.php');
     } elseif ($postAction === 'update') {
-        $toolPair->update($_POST['id'], $_POST);
+        $toolPair->update($_POST['id'], $data);
+        $group->deleteUnused();
         header('Location: index.php');
     }
+}
+
+function handleDuplicate($id)
+{
+    if (!$id) {
+        header('Location: index.php');
+        return;
+    }
+
+    $toolPair = new ToolPair();
+    $newId = $toolPair->duplicate((int) $id);
+
+    if (!$newId) {
+        header('Location: index.php');
+        return;
+    }
+
+    // Open the copy in the edit form so the name can be adjusted right away
+    header('Location: index.php?action=edit&id=' . $newId);
 }
 
 function handleDelete($id)
@@ -107,6 +137,7 @@ function handleDelete($id)
     if ($id) {
         $toolPair = new ToolPair();
         $toolPair->delete($id);
+        (new Group())->deleteUnused();
     }
     header('Location: index.php');
 }
@@ -115,12 +146,15 @@ function showDashboard()
 {
     $toolPair = new ToolPair();
     $pairs = $toolPair->getAll();
-    
+    $groupedPairs = $toolPair->getAllGrouped();
+
     include __DIR__ . '/../views/dashboard.php';
 }
 
 function showAddForm()
 {
+    $groups = (new Group())->getAll();
+
     include __DIR__ . '/../views/form.php';
 }
 
@@ -130,15 +164,17 @@ function showEditForm($id)
         header('Location: index.php');
         return;
     }
-    
+
     $toolPair = new ToolPair();
     $pair = $toolPair->getById($id);
-    
+
     if (!$pair) {
         header('Location: index.php');
         return;
     }
-    
+
+    $groups = (new Group())->getAll();
+
     include __DIR__ . '/../views/form.php';
 }
 

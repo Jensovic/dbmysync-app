@@ -1,11 +1,14 @@
 <?php
+require_once __DIR__ . '/helpers.php';
+
 $isEdit = isset($pair);
 $title = $isEdit ? 'Edit Tool Pair' : 'Add Tool Pair';
+$groups = $groups ?? [];
 ob_start();
 ?>
 
 <div style="margin-bottom: 20px;">
-    <a href="index.php" class="btn">← Back to Dashboard</a>
+    <a href="index.php" class="btn btn-neutral"><?= icon('back') ?>Back to Dashboard</a>
 </div>
 
 <div class="card">
@@ -22,6 +25,22 @@ ob_start();
             <input type="text" id="name" name="name"
                    value="<?= htmlspecialchars($pair['name'] ?? '') ?>"
                    placeholder="e.g., My CMS" required>
+        </div>
+
+        <div class="form-group">
+            <label for="group_name">Group</label>
+            <input type="text" id="group_name" name="group_name" list="group_suggestions"
+                   value="<?= htmlspecialchars($pair['group_name'] ?? '') ?>"
+                   placeholder="e.g., Customer Projects">
+            <datalist id="group_suggestions">
+                <?php foreach ($groups as $group): ?>
+                    <option value="<?= htmlspecialchars($group['name']) ?>"></option>
+                <?php endforeach; ?>
+            </datalist>
+            <small style="color: #666;">
+                Optional. Pick an existing group or type a new name &ndash; it will be created automatically.
+                Leave empty to keep this pair ungrouped.
+            </small>
         </div>
 
         <h3 style="margin-top: 30px; margin-bottom: 15px; color: #2c3e50;">Environment 1</h3>
@@ -78,9 +97,9 @@ ob_start();
         
         <div style="margin-top: 30px;">
             <button type="submit" class="btn btn-success">
-                <?= $isEdit ? 'Update' : 'Create' ?> Tool Pair
+                <?= icon('save') ?><?= $isEdit ? 'Update' : 'Create' ?> Tool Pair
             </button>
-            <a href="index.php" class="btn" style="margin-left: 10px;">Cancel</a>
+            <a href="index.php" class="btn btn-neutral" style="margin-left: 10px;"><?= icon('close') ?>Cancel</a>
         </div>
     </form>
 </div>
