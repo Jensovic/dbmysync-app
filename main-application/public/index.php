@@ -90,7 +90,98 @@ function handleAjax()
         return;
     }
 
+    if ($ajaxAction === 'smoke_test') {
+        $pairId = $_GET['id'] ?? null;
+
+        if (!$pairId) {
+            echo json_encode(['success' => false, 'message' => 'ID is required']);
+            return;
+        }
+
+        $pair = (new ToolPair())->getById((int) $pairId);
+
+        if (!$pair) {
+            echo json_encode(['success' => false, 'message' => 'Tool pair not found']);
+            return;
+        }
+
+        // Secrets stay on the server - the dashboard only receives the resulting status
+        $client = new EndpointClient();
+
+        echo json_encode([
+            'success' => true,
+            'env1' => smokeTestEnvironment($client, $pair['env1_url'], $pair['env1_secret']),
+            'env2' => smokeTestEnvironment($client, $pair['env2_url'], $pair['env2_secret'])
+        ]);
+        return;
+    }
+
+    if ($ajaxAction === 'diff_count') {
+        $pairId = $_GET['id'] ?? null;
+
+        if (!$pairId) {
+            echo json_encode(['success' => false, 'message' => 'ID is required']);
+            return;
+        }
+
+        $pair = (new ToolPair())->getById((int) $pairId);
+
+        if (!$pair) {
+            echo json_encode(['success' => false, 'message' => 'Tool pair not found']);
+            return;
+        }
+
+        try {
+            $client = new EndpointClient();
+            $comparator = new SchemaComparator();
+
+            $env1Data = $client->fetchSchema($pair['env1_url'], $pair['env1_secret']);
+            $env2Data = $client->fetchSchema($pair['env2_url'], $pair['env2_secret']);
+
+            $differences = $comparator->compare($env1Data['tables'] ?? [], $env2Data['tables'] ?? []);
+
+            // Deliberately no sync_history entry - the dashboard runs this on every
+            // page load and would otherwise drown the real comparison runs.
+            echo json_encode([
+                'success' => true,
+                'count' => $comparator->countDifferences($differences)
+            ]);
+        } catch (\Exception $e) {
+            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+        }
+        return;
+    }
+
     echo json_encode(['success' => false, 'message' => 'Unknown action']);
+}
+
+/**
+ * Health check for a single environment, reduced to a traffic light level.
+ *
+ * ok = endpoint answered, warn = endpoint found but secret rejected, error = everything else.
+ */
+function smokeTestEnvironment(EndpointClient $client, ?string $url, ?string $secret): array
+{
+    if (empty($url)) {
+        return [
+            'level' => 'error',
+            'status' => 'no_url',
+            'message' => 'Keine Endpoint-URL hinterlegt'
+        ];
+    }
+
+    $result = $client->testConnectionDetailed($url, (string) $secret);
+
+    $levels = [
+        'success' => 'ok',
+        'auth_failed' => 'warn'
+    ];
+
+    return [
+        'level' => $levels[$result['status']] ?? 'error',
+        'status' => $result['status'],
+        'message' => $result['message']
+    ];
 }
 
 function handlePost()

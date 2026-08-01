@@ -44,6 +44,34 @@ if (!function_exists('formatDate')) {
     }
 }
 
+if (!function_exists('statusDot')) {
+    /**
+     * Placeholder for the endpoint smoke test - filled in by the dashboard script.
+     *
+     * @param int    $pairId Tool pair the dot belongs to
+     * @param string $env    'env1' or 'env2'
+     */
+    function statusDot(int $pairId, string $env): string
+    {
+        return sprintf(
+            '<span class="status-dot status-checking" data-smoke-pair="%d" data-smoke-env="%s"'
+            . ' role="img" title="Status wird gepr&uuml;ft&hellip;" aria-label="Status wird gepr&uuml;ft"></span>',
+            $pairId,
+            htmlspecialchars($env)
+        );
+    }
+}
+
+if (!function_exists('diffBadge')) {
+    /**
+     * Placeholder for the difference count - only filled in once both endpoints are green.
+     */
+    function diffBadge(int $pairId): string
+    {
+        return sprintf('<span class="diff-badge" data-diff-pair="%d" hidden></span>', $pairId);
+    }
+}
+
 if (!function_exists('iconButtonAttrs')) {
     /**
      * Accessible attributes for an icon-only button: visible tooltip + screen reader label.

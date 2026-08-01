@@ -38,13 +38,18 @@ ob_start();
                 <tbody>
                     <?php foreach ($group['pairs'] as $pair): ?>
                     <tr>
-                        <td><strong><?= htmlspecialchars($pair['name']) ?></strong></td>
                         <td>
-                            <strong><?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?></strong><br>
+                            <strong><?= htmlspecialchars($pair['name']) ?></strong>
+                            <?= diffBadge($pair['id']) ?>
+                        </td>
+                        <td>
+                            <strong><?= htmlspecialchars($pair['env1_name'] ?? 'Dev') ?></strong>
+                            <?= statusDot($pair['id'], 'env1') ?><br>
                             <code class="cell-url" title="<?= htmlspecialchars($pair['env1_url']) ?>"><?= htmlspecialchars($pair['env1_url']) ?></code>
                         </td>
                         <td>
-                            <strong><?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?></strong><br>
+                            <strong><?= htmlspecialchars($pair['env2_name'] ?? 'Prod') ?></strong>
+                            <?= statusDot($pair['id'], 'env2') ?><br>
                             <code class="cell-url" title="<?= htmlspecialchars($pair['env2_url']) ?>"><?= htmlspecialchars($pair['env2_url']) ?></code>
                         </td>
                         <td><?= formatDate($pair['updated_at'] ?: $pair['created_at']) ?></td>
@@ -80,6 +85,110 @@ ob_start();
         <li>Use the SQL buttons to generate migration scripts</li>
     </ol>
 </div>
+
+<script>
+// Endpoint smoke test: one request per tool pair, both environments checked server side
+function applySmokeStatus(dot, level, message) {
+    dot.className = 'status-dot status-' + level;
+    dot.title = message;
+    dot.setAttribute('aria-label', 'Status: ' + message);
+}
+
+async function runSmokeTest(pairId, dots) {
+    try {
+        const response = await fetch('index.php?ajax=smoke_test&id=' + encodeURIComponent(pairId));
+        const data = await response.json();
+        let allGreen = true;
+
+        dots.forEach(dot => {
+            const result = data[dot.dataset.smokeEnv];
+
+            if (!result) {
+                applySmokeStatus(dot, 'error', data.message || 'Unbekannter Fehler');
+                allGreen = false;
+                return;
+            }
+
+            applySmokeStatus(dot, result.level, result.message);
+            allGreen = allGreen && result.level === 'ok';
+        });
+
+        return allGreen;
+    } catch (error) {
+        dots.forEach(dot => applySmokeStatus(dot, 'error', 'Statusprüfung fehlgeschlagen'));
+        return false;
+    }
+}
+
+// A difference count means two full schema downloads per pair, so these run one
+// after another instead of firing every pair at its endpoints at once.
+const diffQueue = [];
+let diffQueueRunning = false;
+
+function enqueueDiffCount(pairId) {
+    diffQueue.push(pairId);
+
+    if (!diffQueueRunning) {
+        diffQueueRunning = true;
+        processDiffQueue().finally(() => { diffQueueRunning = false; });
+    }
+}
+
+async function processDiffQueue() {
+    while (diffQueue.length > 0) {
+        const pairId = diffQueue.shift();
+        const badge = document.querySelector('.diff-badge[data-diff-pair="' + pairId + '"]');
+
+        if (!badge) {
+            continue;
+        }
+
+        badge.hidden = false;
+        badge.className = 'diff-badge badge badge-checking';
+        badge.textContent = '…';
+        badge.title = 'Vergleiche Strukturen…';
+
+        try {
+            const response = await fetch('index.php?ajax=diff_count&id=' + encodeURIComponent(pairId));
+            const data = await response.json();
+
+            if (!data.success) {
+                badge.hidden = true;
+                continue;
+            }
+
+            badge.className = 'diff-badge badge ' + (data.count === 0 ? 'badge-success' : 'badge-warning');
+            badge.textContent = data.count;
+            badge.title = data.count === 1
+                ? '1 Strukturunterschied zwischen beiden Umgebungen'
+                : data.count + ' Strukturunterschiede zwischen beiden Umgebungen';
+        } catch (error) {
+            // Nothing to show is better than a wrong number
+            badge.hidden = true;
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const byPair = new Map();
+
+    document.querySelectorAll('.status-dot[data-smoke-pair]').forEach(dot => {
+        const pairId = dot.dataset.smokePair;
+        if (!byPair.has(pairId)) {
+            byPair.set(pairId, []);
+        }
+        byPair.get(pairId).push(dot);
+    });
+
+    byPair.forEach((dots, pairId) => {
+        runSmokeTest(pairId, dots).then(allGreen => {
+            if (allGreen) {
+                enqueueDiffCount(pairId);
+            }
+        });
+    });
+});
+</script>
 
 <?php
 $content = ob_get_clean();

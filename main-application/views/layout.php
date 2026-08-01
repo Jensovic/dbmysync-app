@@ -215,6 +215,37 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
+        /* Endpoint smoke test: same traffic light semantics as the edit form */
+        .status-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            margin-left: 6px;
+            border-radius: 50%;
+            background: #bdc3c7;
+            vertical-align: 0.05em;
+            flex-shrink: 0;
+        }
+        .status-dot.status-ok { background: #27ae60; box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.2); }
+        .status-dot.status-warn { background: #f1c40f; box-shadow: 0 0 0 2px rgba(241, 196, 15, 0.25); }
+        .status-dot.status-error { background: #e74c3c; box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2); }
+        .status-dot.status-checking { animation: status-pulse 1.2s ease-in-out infinite; }
+        @keyframes status-pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .status-dot.status-checking { animation: none; opacity: 0.6; }
+        }
+
+        /* Difference count next to the pair name - only shown when both dots are green */
+        .diff-badge {
+            margin-left: 8px;
+            white-space: nowrap;
+            font-weight: 600;
+        }
+        .badge-checking { background: #ecf0f1; color: #7f8c8d; font-weight: 500; }
 </style>
 </head>
 <body>
