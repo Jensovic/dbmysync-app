@@ -142,11 +142,37 @@ class SchemaComparator
             $diff['nullable'] = ['offline' => $offline['nullable'], 'online' => $online['nullable']];
         }
 
-        if (($offline['default'] ?? null) !== ($online['default'] ?? null)) {
+        if ($this->normalizeDefault($offline['default'] ?? null) !== $this->normalizeDefault($online['default'] ?? null)) {
             $diff['default'] = ['offline' => $offline['default'] ?? null, 'online' => $online['default'] ?? null];
         }
 
         return $diff;
+    }
+
+    /**
+     * Normalize a column default for comparison.
+     * MySQL 5.x reports "CURRENT_TIMESTAMP", MySQL 8 "current_timestamp()" -
+     * semantically identical, so they must not show up as a difference.
+     */
+    private function normalizeDefault($value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $normalized = trim((string) $value);
+
+        if (SqlGenerator::isExpressionDefault($normalized)) {
+            // Strip an empty precision suffix so "current_timestamp()" == "CURRENT_TIMESTAMP"
+            return preg_replace('/\(\s*\)$/', '', strtolower($normalized));
+        }
+
+        // Quoted literals ('abc') and bare literals (abc) are the same value
+        if (strlen($normalized) >= 2 && $normalized[0] === "'" && substr($normalized, -1) === "'") {
+            $normalized = str_replace("''", "'", substr($normalized, 1, -1));
+        }
+
+        return $normalized;
     }
 
     /**

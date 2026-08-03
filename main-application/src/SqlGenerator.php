@@ -429,9 +429,15 @@ class SqlGenerator
      */
     private function quoteDefault($value): string
     {
-        // Handle NULL and special MySQL values
-        if ($value === null || $value === 'NULL' || $value === 'CURRENT_TIMESTAMP') {
-            return $value === null ? 'NULL' : $value;
+        // Handle NULL
+        if ($value === null || $value === 'NULL') {
+            return 'NULL';
+        }
+
+        // Handle MySQL expression defaults (CURRENT_TIMESTAMP, current_timestamp(3), now(), ...)
+        // These must never be wrapped in single quotes
+        if (self::isExpressionDefault($value)) {
+            return $value;
         }
 
         // Handle numeric values
@@ -447,6 +453,27 @@ class SqlGenerator
 
         // Not quoted - add quotes and escape internal quotes
         return "'" . str_replace("'", "''", $value) . "'";
+    }
+
+    /**
+     * Check whether a default is a MySQL expression instead of a literal value.
+     * MySQL 5.x reports "CURRENT_TIMESTAMP", MySQL 8 reports "current_timestamp()"
+     * or "current_timestamp(3)" - none of these may be quoted.
+     */
+    public static function isExpressionDefault($value): bool
+    {
+        if (!is_string($value)) {
+            return false;
+        }
+
+        $normalized = strtolower(trim($value));
+
+        if (preg_match('/^(current_timestamp|now|localtime|localtimestamp|current_date|curdate|current_time|curtime|uuid|utc_timestamp|utc_date|utc_time)(\s*\(\s*\d*\s*\))?$/', $normalized)) {
+            return true;
+        }
+
+        // Generated / expression defaults in MySQL 8 are wrapped in parentheses
+        return strlen($normalized) >= 2 && $normalized[0] === '(' && substr($normalized, -1) === ')';
     }
 
     /**
