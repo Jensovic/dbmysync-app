@@ -160,6 +160,7 @@
         .badge-success { background: #d4edda; color: #155724; }
         .badge-danger { background: #f8d7da; color: #721c24; }
         .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-unknown { background: #ecf0f1; color: #7f8c8d; }
 
         /* --------------------------------------------------------------
            Dashboard groups + tool pair table
@@ -190,23 +191,72 @@
             mask: url("icons/group.svg") no-repeat center / contain;
             flex-shrink: 0;
         }
+        /* The whole name area is the collapse toggle, so it stays one big target */
+        .group-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            min-width: 0;
+            padding: 0;
+            background: none;
+            border: none;
+            font: inherit;
+            color: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+        .card .group-toggle h2 {
+            margin: 0;
+            font-size: 18px;
+            line-height: 1;
+        }
         .group-header .group-count {
-            margin-left: auto;
             color: #7f8c8d;
             font-size: 13px;
             font-weight: 500;
-            line-height: 1;
         }
+        /* Chevron drawn in CSS: points down when open, right when collapsed */
+        .group-caret {
+            width: 8px;
+            height: 8px;
+            margin-left: 2px;
+            border-right: 2px solid #7f8c8d;
+            border-bottom: 2px solid #7f8c8d;
+            transform: rotate(45deg) translate(-2px, -2px);
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+        .group-card.is-collapsed .group-caret {
+            transform: rotate(-45deg) translate(-2px, -2px);
+        }
+        .group-card.is-collapsed .group-body { display: none; }
+        /* Collapsed the header is the whole card, so it needs no separator */
+        .group-card.is-collapsed .group-header {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        /* Sum and average of the group's differences - kept visible while collapsed */
+        .group-summary {
+            display: inline-flex;
+            gap: 6px;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+
         .group-ungrouped .group-header h2 { color: #7f8c8d; font-weight: 500; }
         .group-ungrouped .group-header .group-icon { background-color: #95a5a6; }
 
         /* Fixed columns so long URLs can be truncated */
         .table-pairs { table-layout: fixed; }
         .table-pairs td { word-break: break-word; }
-        .table-pairs .col-name { width: 20%; }
-        .table-pairs .col-env { width: 26%; }
-        .table-pairs .col-modified { width: 13%; }
-        .table-pairs .col-actions { width: 15%; }
+        .table-pairs .col-name { width: 19%; }
+        .table-pairs .col-env { width: 24%; }
+        .table-pairs .col-modified { width: 12%; }
+        /* Wide enough for five icon buttons incl. the per-pair refresh */
+        .table-pairs .col-actions { width: 21%; }
         .table-pairs .btn-group { flex-wrap: nowrap; }
         .cell-url {
             display: block;
@@ -239,13 +289,34 @@
             .status-dot.status-checking { animation: none; opacity: 0.6; }
         }
 
-        /* Difference count next to the pair name - only shown when both dots are green */
+        /* Difference count next to the pair name - rendered from the last stored
+           check, refreshed on demand via the refresh buttons */
         .diff-badge {
             margin-left: 8px;
             white-space: nowrap;
             font-weight: 600;
         }
         .badge-checking { background: #ecf0f1; color: #7f8c8d; font-weight: 500; }
+
+        /* Refresh buttons: same icon at three scopes (all / group / single pair) */
+        .btn-refresh {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-refresh .icon { margin-right: 0; }
+        .btn-refresh.btn-icon { padding: 6px; line-height: 0; }
+        .btn-refresh:disabled { opacity: 0.6; cursor: default; }
+        .btn-refresh.is-busy .icon { animation: refresh-spin 1s linear infinite; }
+        @keyframes refresh-spin {
+            to { transform: rotate(360deg); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .btn-refresh.is-busy .icon { animation: none; }
+        }
+        /* The group refresh sits right after the count, not pushed to the far edge */
+        .group-header .btn-refresh { margin-left: 4px; }
 </style>
 </head>
 <body>

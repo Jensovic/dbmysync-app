@@ -20,6 +20,12 @@ CREATE TABLE IF NOT EXISTS tool_pairs (
     env2_url TEXT NOT NULL,
     env2_secret TEXT NOT NULL,
     active INTEGER DEFAULT 1,
+    -- Cached result of the last difference check (dashboard reads this instead
+    -- of comparing both schemas on every page load)
+    last_diff_count INTEGER,
+    last_diff_status TEXT,
+    last_diff_error TEXT,
+    last_diff_checked_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE SET NULL

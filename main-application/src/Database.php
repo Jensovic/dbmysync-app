@@ -71,6 +71,19 @@ class Database
             $pdo->exec("ALTER TABLE tool_pairs ADD COLUMN group_id INTEGER");
         }
 
+        // Cached difference count so the dashboard does not have to compare
+        // both schemas on every page load
+        foreach ([
+            'last_diff_count' => 'INTEGER',
+            'last_diff_status' => 'TEXT',
+            'last_diff_error' => 'TEXT',
+            'last_diff_checked_at' => 'DATETIME'
+        ] as $column => $type) {
+            if (!$this->hasColumn($pdo, 'tool_pairs', $column)) {
+                $pdo->exec("ALTER TABLE tool_pairs ADD COLUMN {$column} {$type}");
+            }
+        }
+
         $pdo->exec("CREATE INDEX IF NOT EXISTS idx_tool_pairs_group ON tool_pairs(group_id)");
     }
 

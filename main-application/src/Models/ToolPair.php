@@ -152,6 +152,36 @@ class ToolPair
     }
 
     /**
+     * Store the outcome of a difference check on the tool pair itself.
+     *
+     * The dashboard renders this cached value instead of comparing both schemas
+     * on every page load; it is only refreshed on an explicit user request.
+     *
+     * @param int      $id    Tool pair
+     * @param int|null $count Number of differences, or null when the check failed
+     * @param string   $status 'ok' or 'error'
+     * @param string|null $error Error message for a failed check
+     */
+    public function updateDiffResult(int $id, ?int $count, string $status = 'ok', ?string $error = null): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE tool_pairs SET
+                last_diff_count = :count,
+                last_diff_status = :status,
+                last_diff_error = :error,
+                last_diff_checked_at = CURRENT_TIMESTAMP
+            WHERE id = :id
+        ");
+
+        return $stmt->execute([
+            'id' => $id,
+            'count' => $count,
+            'status' => $status,
+            'error' => $error
+        ]);
+    }
+
+    /**
      * Duplicate a tool pair including group, URLs and secrets.
      *
      * @return int|null ID of the new tool pair, or null if the source does not exist

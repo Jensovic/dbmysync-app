@@ -4,6 +4,7 @@
  */
 
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../views/helpers.php';
 
 use Jensovic\DbMySync\Database;
 use Jensovic\DbMySync\Models\Group;
@@ -116,7 +117,10 @@ function handleAjax()
         return;
     }
 
-    if ($ajaxAction === 'diff_count') {
+    // One request per pair: health check first, difference count only if both
+    // endpoints answer. Keeping the two together means the traffic lights and
+    // the badge can never disagree about whether an endpoint is reachable.
+    if ($ajaxAction === 'refresh_pair') {
         $pairId = $_GET['id'] ?? null;
 
         if (!$pairId) {
@@ -124,35 +128,94 @@ function handleAjax()
             return;
         }
 
-        $pair = (new ToolPair())->getById((int) $pairId);
+        $model = new ToolPair();
+        $pair = $model->getById((int) $pairId);
 
         if (!$pair) {
             echo json_encode(['success' => false, 'message' => 'Tool pair not found']);
             return;
         }
 
-        try {
-            $client = new EndpointClient();
-            $comparator = new SchemaComparator();
+        // Secrets stay on the server - the dashboard only receives the resulting status
+        $client = new EndpointClient();
+        $env1 = smokeTestEnvironment($client, $pair['env1_url'], $pair['env1_secret']);
+        $env2 = smokeTestEnvironment($client, $pair['env2_url'], $pair['env2_secret']);
 
-            $env1Data = $client->fetchSchema($pair['env1_url'], $pair['env1_secret']);
-            $env2Data = $client->fetchSchema($pair['env2_url'], $pair['env2_secret']);
+        $response = ['success' => true, 'env1' => $env1, 'env2' => $env2];
 
-            $differences = $comparator->compare($env1Data['tables'] ?? [], $env2Data['tables'] ?? []);
+        if ($env1['level'] !== 'ok' || $env2['level'] !== 'ok') {
+            // Skip the two schema downloads that would only run into the same
+            // failure, but still record it - a stale count next to a red light
+            // would be worse than no count at all.
+            $message = unreachableMessage($pair, $env1, $env2);
+            $model->updateDiffResult((int) $pairId, null, 'error', $message);
 
-            // Deliberately no sync_history entry - the dashboard runs this on every
-            // page load and would otherwise drown the real comparison runs.
-            echo json_encode([
-                'success' => true,
-                'count' => $comparator->countDifferences($differences)
-            ]);
-        } catch (\Exception $e) {
-            echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+            echo json_encode(array_merge(
+                $response,
+                ['compared' => false, 'message' => $message],
+                diffBadgeState('error', null, $message, gmdate('Y-m-d H:i:s'))
+            ));
+            return;
         }
+
+        echo json_encode(array_merge($response, ['compared' => true], compareAndStore($model, $pair)));
         return;
     }
 
     echo json_encode(['success' => false, 'message' => 'Unknown action']);
+}
+
+/**
+ * Run the schema comparison for a pair and cache the outcome on the pair.
+ *
+ * @return array Badge description for the dashboard, plus the raw count on success
+ */
+function compareAndStore(ToolPair $model, array $pair): array
+{
+    try {
+        $client = new EndpointClient();
+        $comparator = new SchemaComparator();
+
+        $env1Data = $client->fetchSchema($pair['env1_url'], $pair['env1_secret']);
+        $env2Data = $client->fetchSchema($pair['env2_url'], $pair['env2_secret']);
+
+        $differences = $comparator->compare($env1Data['tables'] ?? [], $env2Data['tables'] ?? []);
+        $count = $comparator->countDifferences($differences);
+
+        // Cache the result so the dashboard can render it without re-comparing.
+        // Deliberately no sync_history entry - "refresh all" would otherwise
+        // drown the real comparison runs.
+        $model->updateDiffResult((int) $pair['id'], $count, 'ok');
+
+        return array_merge(
+            ['count' => $count],
+            diffBadgeState('ok', $count, null, gmdate('Y-m-d H:i:s'))
+        );
+    } catch (\Exception $e) {
+        $model->updateDiffResult((int) $pair['id'], null, 'error', $e->getMessage());
+
+        return array_merge(
+            ['message' => $e->getMessage()],
+            diffBadgeState('error', null, $e->getMessage(), gmdate('Y-m-d H:i:s'))
+        );
+    }
+}
+
+/**
+ * Name the environment that is not reachable, so the badge tooltip says which
+ * side needs attention instead of just "failed".
+ */
+function unreachableMessage(array $pair, array $env1, array $env2): string
+{
+    $broken = [];
+
+    foreach ([['env1', $env1], ['env2', $env2]] as [$key, $result]) {
+        if ($result['level'] !== 'ok') {
+            $broken[] = ($pair[$key . '_name'] ?: $key) . ' - ' . $result['message'];
+        }
+    }
+
+    return implode(' | ', $broken);
 }
 
 /**
@@ -311,6 +374,9 @@ function showComparison($id)
             'differences_found' => $diffCount
         ]);
 
+        // Keep the dashboard badge in sync with what the user just looked at
+        $toolPairModel->updateDiffResult((int) $id, $diffCount, 'ok');
+
     } catch (\Exception $e) {
         $error = $e->getMessage();
         $toolPairModel->addSyncHistory($id, [
@@ -318,6 +384,7 @@ function showComparison($id)
             'env2_status' => 'error',
             'error_message' => $error
         ]);
+        $toolPairModel->updateDiffResult((int) $id, null, 'error', $error);
     }
     
     include __DIR__ . '/../views/comparison.php';
