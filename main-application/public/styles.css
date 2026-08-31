@@ -1,0 +1,320 @@
+/**
+ * DbMySync - application styles
+ *
+ * Loaded by views/layout.php, so this covers every page. Page-specific rules
+ * stay in their own view.
+ *
+ * Relative url() references resolve against this file, which sits next to
+ * icons/ in public/ - the same paths the pages themselves use.
+ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+}
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+header {
+    background: #2c3e50;
+    color: white;
+    padding: 20px 0;
+    margin-bottom: 30px;
+}
+header h1 {
+    font-size: 28px;
+    font-weight: 600;
+}
+header p {
+    opacity: 0.8;
+    margin-top: 5px;
+}
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #3498db;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.3s;
+}
+.btn:hover { background: #2980b9; }
+.btn-success { background: #27ae60; }
+.btn-success:hover { background: #229954; }
+.btn-danger { background: #e74c3c; }
+.btn-danger:hover { background: #c0392b; }
+.btn-small { padding: 6px 12px; font-size: 13px; }
+.btn-neutral { background: #7f8c8d; }
+.btn-neutral:hover { background: #6c7a7b; }
+
+/* Icons: 24x24 SVGs, white strokes on transparent background */
+.icon {
+    display: inline-block;
+    vertical-align: -0.18em;
+    flex-shrink: 0;
+}
+.btn .icon { margin-right: 8px; }
+
+/* Icon-only buttons: square, no label */
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+    line-height: 0;
+}
+.btn-icon .icon { margin-right: 0; }
+.btn-icon.btn-small { padding: 6px; }
+
+.btn-group {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.card h2 {
+    margin-bottom: 15px;
+    color: #2c3e50;
+    font-size: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ecf0f1;
+}
+th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: #2c3e50;
+}
+tr:hover { background: #f8f9fa; }
+
+.form-group {
+    margin-bottom: 20px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+    color: #2c3e50;
+}
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+.form-group input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+.alert-error {
+    background: #fee;
+    border: 1px solid #fcc;
+    color: #c00;
+}
+.alert-success {
+    background: #efe;
+    border: 1px solid #cfc;
+    color: #060;
+}
+.alert-info {
+    background: #e7f3ff;
+    border: 1px solid #b3d9ff;
+    color: #004085;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+}
+.badge-success { background: #d4edda; color: #155724; }
+.badge-danger { background: #f8d7da; color: #721c24; }
+.badge-warning { background: #fff3cd; color: #856404; }
+.badge-unknown { background: #ecf0f1; color: #7f8c8d; }
+
+/* --------------------------------------------------------------
+   Dashboard groups + tool pair table
+   Must stay after .card / table so these rules win over `.card h2`
+   and the generic table styles (equal specificity, later wins).
+   -------------------------------------------------------------- */
+.group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #ecf0f1;
+}
+.card .group-header h2 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1;
+}
+/* The white icon is recoloured via a mask, so it matches the heading exactly */
+.group-header .group-icon {
+    display: block;
+    width: 20px;
+    height: 20px;
+    margin-top: -1px;
+    background-color: #2c3e50;
+    -webkit-mask: url("icons/group.svg") no-repeat center / contain;
+    mask: url("icons/group.svg") no-repeat center / contain;
+    flex-shrink: 0;
+}
+/* The whole name area is the collapse toggle, so it stays one big target */
+.group-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+.card .group-toggle h2 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1;
+}
+.group-header .group-count {
+    color: #7f8c8d;
+    font-size: 13px;
+    font-weight: 500;
+}
+/* Chevron drawn in CSS: points down when open, right when collapsed */
+.group-caret {
+    width: 8px;
+    height: 8px;
+    margin-left: 2px;
+    border-right: 2px solid #7f8c8d;
+    border-bottom: 2px solid #7f8c8d;
+    transform: rotate(45deg) translate(-2px, -2px);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+}
+.group-card.is-collapsed .group-caret {
+    transform: rotate(-45deg) translate(-2px, -2px);
+}
+.group-card.is-collapsed .group-body { display: none; }
+/* Collapsed the header is the whole card, so it needs no separator */
+.group-card.is-collapsed .group-header {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+/* Sum and average of the group's differences - kept visible while collapsed */
+.group-summary {
+    display: inline-flex;
+    gap: 6px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.group-ungrouped .group-header h2 { color: #7f8c8d; font-weight: 500; }
+.group-ungrouped .group-header .group-icon { background-color: #95a5a6; }
+
+/* Fixed columns so long URLs can be truncated */
+.table-pairs { table-layout: fixed; }
+.table-pairs td { word-break: break-word; }
+.table-pairs .col-name { width: 19%; }
+.table-pairs .col-env { width: 24%; }
+.table-pairs .col-modified { width: 12%; }
+/* Wide enough for five icon buttons incl. the per-pair refresh */
+.table-pairs .col-actions { width: 21%; }
+.table-pairs .btn-group { flex-wrap: nowrap; }
+.cell-url {
+    display: block;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Endpoint smoke test: same traffic light semantics as the edit form */
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: #bdc3c7;
+    vertical-align: 0.05em;
+    flex-shrink: 0;
+}
+.status-dot.status-ok { background: #27ae60; box-shadow: 0 0 0 2px rgba(39, 174, 96, 0.2); }
+.status-dot.status-warn { background: #f1c40f; box-shadow: 0 0 0 2px rgba(241, 196, 15, 0.25); }
+.status-dot.status-error { background: #e74c3c; box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.2); }
+.status-dot.status-checking { animation: status-pulse 1.2s ease-in-out infinite; }
+@keyframes status-pulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .status-dot.status-checking { animation: none; opacity: 0.6; }
+}
+
+/* Difference count next to the pair name - rendered from the last stored
+   check, refreshed on demand via the refresh buttons */
+.diff-badge {
+    margin-left: 8px;
+    white-space: nowrap;
+    font-weight: 600;
+}
+.badge-checking { background: #ecf0f1; color: #7f8c8d; font-weight: 500; }
+
+/* Refresh buttons: same icon at three scopes (all / group / single pair) */
+.btn-refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.btn-refresh .icon { margin-right: 0; }
+.btn-refresh.btn-icon { padding: 6px; line-height: 0; }
+.btn-refresh:disabled { opacity: 0.6; cursor: default; }
+.btn-refresh.is-busy .icon { animation: refresh-spin 1s linear infinite; }
+@keyframes refresh-spin {
+    to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .btn-refresh.is-busy .icon { animation: none; }
+}
+/* The group refresh sits right after the count, not pushed to the far edge */
+.group-header .btn-refresh { margin-left: 4px; }

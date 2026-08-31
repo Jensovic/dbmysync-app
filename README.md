@@ -18,6 +18,7 @@ DbMySync is a powerful PHP-based tool for comparing MySQL database schemas betwe
 - 🎨 **Modern UI**: Clean, responsive interface with modal dialogs
 - 📋 **Copy to Clipboard**: One-click copy of generated SQL statements
 - 🔄 **Bidirectional Sync**: Sync from Dev to Prod or Prod to Dev
+- ⚡ **Fast Dashboard**: Difference counts are cached and refreshed on demand, per pair, per group or all at once
 
 ## 📦 What It Detects
 
@@ -144,7 +145,7 @@ server {
 ```
 dbmysync-app/
 ├── main-application/     # Main web interface
-│   ├── public/          # Web root
+│   ├── public/          # Web root (index.php, styles.css, dashboard.js, icons/)
 │   ├── src/             # PHP classes
 │   ├── views/           # HTML templates
 │   ├── data/            # SQLite database
