@@ -52,6 +52,12 @@ Click "Compare" to fetch and compare database structures.
 
 See missing tables, columns, keys, and indexes.
 
+Comparing MySQL 8 against MariaDB or MySQL 5.x works without false positives:
+integer display widths (`int(11)` vs. `int`) and the different ways of reporting
+defaults (`NULL` as text, quoted vs. bare strings) are treated as equal.
+`tinyint(1)` and `varchar` lengths still count as differences. See the main
+[README](../README.md#mysql-8-vs-mariadb--mysql-5x) for details.
+
 ### 4. Generate Migration SQL
 
 Get ready-to-use SQL statements to sync your databases.

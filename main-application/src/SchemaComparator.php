@@ -134,7 +134,7 @@ class SchemaComparator
     {
         $diff = [];
 
-        if ($offline['type'] !== $online['type']) {
+        if ($this->normalizeType($offline['type']) !== $this->normalizeType($online['type'])) {
             $diff['type'] = ['offline' => $offline['type'], 'online' => $online['type']];
         }
 
@@ -142,7 +142,7 @@ class SchemaComparator
             $diff['nullable'] = ['offline' => $offline['nullable'], 'online' => $online['nullable']];
         }
 
-        if ($this->normalizeDefault($offline['default'] ?? null) !== $this->normalizeDefault($online['default'] ?? null)) {
+        if (!$this->defaultsEqual($offline['default'] ?? null, $online['default'] ?? null)) {
             $diff['default'] = ['offline' => $offline['default'] ?? null, 'online' => $online['default'] ?? null];
         }
 
@@ -150,29 +150,62 @@ class SchemaComparator
     }
 
     /**
-     * Normalize a column default for comparison.
+     * Normalize a column type for comparison.
+     * MySQL 8.0.19+ omits integer display widths ("int" instead of "int(11)");
+     * the width has no effect on storage, except together with ZEROFILL.
+     * TINYINT(1) is kept: it marks a boolean, and MySQL 8 still reports it.
+     */
+    private function normalizeType(string $type): string
+    {
+        $type = strtolower(trim($type));
+
+        if (strpos($type, 'zerofill') !== false || preg_match('/^tinyint\(1\)/', $type)) {
+            return $type;
+        }
+
+        return preg_replace('/^(tinyint|smallint|mediumint|int|integer|bigint)\(\d+\)/', '$1', $type);
+    }
+
+    /**
+     * Compare two column defaults.
+     * MariaDB reports string defaults quoted ('abc') and a missing default as the
+     * string "NULL"; MySQL reports them bare (abc) and as real NULL. Since we don't
+     * know which flavour each side is, a value matches if any interpretation matches.
+     */
+    private function defaultsEqual($a, $b): bool
+    {
+        return !empty(array_intersect($this->defaultCandidates($a), $this->defaultCandidates($b)));
+    }
+
+    /**
+     * Possible meanings of a reported default, as comparable strings ("\0NULL" = no default).
      * MySQL 5.x reports "CURRENT_TIMESTAMP", MySQL 8 "current_timestamp()" -
      * semantically identical, so they must not show up as a difference.
      */
-    private function normalizeDefault($value): ?string
+    private function defaultCandidates($value): array
     {
         if ($value === null) {
-            return null;
+            return ["\0NULL"];
         }
 
-        $normalized = trim((string) $value);
+        $raw = trim((string) $value);
 
-        if (SqlGenerator::isExpressionDefault($normalized)) {
+        if (strtoupper($raw) === 'NULL') {
+            return ["\0NULL"];
+        }
+
+        if (SqlGenerator::isExpressionDefault($raw)) {
             // Strip an empty precision suffix so "current_timestamp()" == "CURRENT_TIMESTAMP"
-            return preg_replace('/\(\s*\)$/', '', strtolower($normalized));
+            return [preg_replace('/\(\s*\)$/', '', strtolower($raw))];
         }
 
-        // Quoted literals ('abc') and bare literals (abc) are the same value
-        if (strlen($normalized) >= 2 && $normalized[0] === "'" && substr($normalized, -1) === "'") {
-            $normalized = str_replace("''", "'", substr($normalized, 1, -1));
+        $candidates = [$raw];
+
+        if (strlen($raw) >= 2 && $raw[0] === "'" && substr($raw, -1) === "'") {
+            $candidates[] = str_replace("''", "'", substr($raw, 1, -1));
         }
 
-        return $normalized;
+        return $candidates;
     }
 
     /**

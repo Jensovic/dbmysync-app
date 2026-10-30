@@ -34,6 +34,21 @@ DbMySync is a powerful PHP-based tool for comparing MySQL database schemas betwe
 - ✅ Different charset/collation
 - ✅ Different extra attributes (auto_increment, etc.)
 
+#### MySQL 8 vs. MariaDB / MySQL 5.x
+Both servers report the same schema differently in `INFORMATION_SCHEMA`. These
+variants are treated as equal, so comparing across versions shows no false positives:
+
+| Older MySQL / MariaDB | MySQL 8 | Why it is equal |
+|---|---|---|
+| `int(11)`, `tinyint(4)`, `bigint(20)` | `int`, `tinyint`, `bigint` | Integer display width has no effect on storage; MySQL 8.0.19+ omits it |
+| Default `NULL` (as text) | Default `NULL` | MariaDB reports a missing default as the string `NULL` |
+| Default `'abc'` | Default `abc` | MariaDB quotes string defaults, MySQL does not |
+| Default `CURRENT_TIMESTAMP` | Default `current_timestamp()` | Same expression |
+
+Still reported as differences: `tinyint(1)` vs. other `tinyint` widths (it marks a
+boolean, and MySQL 8 keeps it), integer widths with `ZEROFILL`, and any length of
+non-integer types such as `varchar(50)` vs. `varchar(255)`.
+
 ### Indexes
 - ✅ Missing indexes
 - ✅ Different index types (UNIQUE, KEY)
