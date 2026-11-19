@@ -84,7 +84,8 @@ class SchemaReader
                 EXTRA as extra,
                 CHARACTER_SET_NAME as charset,
                 COLLATION_NAME as collation,
-                ORDINAL_POSITION as position
+                ORDINAL_POSITION as position,
+                COLUMN_COMMENT as comment
             FROM INFORMATION_SCHEMA.COLUMNS
             WHERE TABLE_SCHEMA = :database
             AND TABLE_NAME = :table
@@ -103,7 +104,8 @@ class SchemaReader
                 'extra' => $col['extra'],
                 'charset' => $col['charset'],
                 'collation' => $col['collation'],
-                'position' => (int) $col['position']
+                'position' => (int) $col['position'],
+                'comment' => (string) $col['comment']
             ];
         }, $stmt->fetchAll());
     }

@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS tool_pairs (
     env2_name TEXT DEFAULT 'Prod',
     env2_url TEXT NOT NULL,
     env2_secret TEXT NOT NULL,
+    -- Storage engine used when the SQL generator creates a table in that environment ('' = server default)
+    env1_engine TEXT DEFAULT 'InnoDB',
+    env2_engine TEXT DEFAULT 'InnoDB',
     active INTEGER DEFAULT 1,
     -- Cached result of the last difference check (dashboard reads this instead
     -- of comparing both schemas on every page load)

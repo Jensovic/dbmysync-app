@@ -146,7 +146,33 @@ class SchemaComparator
             $diff['default'] = ['offline' => $offline['default'] ?? null, 'online' => $online['default'] ?? null];
         }
 
+        if ($this->normalizeExtra($offline['extra'] ?? '') !== $this->normalizeExtra($online['extra'] ?? '')) {
+            $diff['extra'] = ['offline' => $offline['extra'] ?? '', 'online' => $online['extra'] ?? ''];
+        }
+
+        // Older dbmysync-addin endpoints do not report comments at all
+        if (array_key_exists('comment', $offline) && array_key_exists('comment', $online)
+            && (string) $offline['comment'] !== (string) $online['comment']) {
+            $diff['comment'] = ['offline' => $offline['comment'], 'online' => $online['comment']];
+        }
+
         return $diff;
+    }
+
+    /**
+     * Normalize INFORMATION_SCHEMA.EXTRA for comparison.
+     * MySQL 8 adds DEFAULT_GENERATED to every expression default and writes
+     * "on update CURRENT_TIMESTAMP"; MariaDB writes "on update current_timestamp()".
+     */
+    private function normalizeExtra(?string $extra): string
+    {
+        $extra = strtolower(trim((string) $extra));
+        $extra = preg_replace('/\bdefault_generated\b/', '', $extra);
+        $extra = preg_replace('/\b(current_timestamp|now|localtime|localtimestamp)\s*\(\s*\)/', '$1', $extra);
+        $extra = preg_replace('/\b(now|localtimestamp|localtime)\b/', 'current_timestamp', $extra);
+        $extra = preg_replace('/\bpersistent generated\b/', 'stored generated', $extra);
+
+        return trim(preg_replace('/\s+/', ' ', $extra));
     }
 
     /**

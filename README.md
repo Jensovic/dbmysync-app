@@ -31,8 +31,19 @@ DbMySync is a powerful PHP-based tool for comparing MySQL database schemas betwe
 - ✅ Different data types
 - ✅ Different nullable settings
 - ✅ Different default values
-- ✅ Different charset/collation
-- ✅ Different extra attributes (auto_increment, etc.)
+- ✅ Different extra attributes (`auto_increment`, `ON UPDATE CURRENT_TIMESTAMP`, generated columns)
+- ✅ Different column comments (only when both endpoints report them, dbmysync-addin with `comment` support)
+- ❌ Charset/collation are carried into generated SQL, but not compared
+
+#### Generated SQL
+CREATE TABLE, ADD COLUMN and MODIFY COLUMN share one column definition built only from
+what the source reports: no default is invented, `ON UPDATE` and `AUTO_INCREMENT` are kept.
+Because MODIFY replaces the whole definition, a default that exists only in the target is
+removed. Generated (virtual/stored) columns cannot be reproduced - the endpoint does not
+report their expression - and are flagged with a warning comment.
+
+The storage engine for CREATE TABLE is set per environment in the tool pair
+(e.g. MyISAM locally, InnoDB in production; empty = no ENGINE clause).
 
 #### MySQL 8 vs. MariaDB / MySQL 5.x
 Both servers report the same schema differently in `INFORMATION_SCHEMA`. These
@@ -44,6 +55,7 @@ variants are treated as equal, so comparing across versions shows no false posit
 | Default `NULL` (as text) | Default `NULL` | MariaDB reports a missing default as the string `NULL` |
 | Default `'abc'` | Default `abc` | MariaDB quotes string defaults, MySQL does not |
 | Default `CURRENT_TIMESTAMP` | Default `current_timestamp()` | Same expression |
+| Extra `on update current_timestamp()` | Extra `DEFAULT_GENERATED on update CURRENT_TIMESTAMP` | MySQL 8 flags every expression default |
 
 Still reported as differences: `tinyint(1)` vs. other `tinyint` widths (it marks a
 boolean, and MySQL 8 keeps it), integer widths with `ZEROFILL`, and any length of

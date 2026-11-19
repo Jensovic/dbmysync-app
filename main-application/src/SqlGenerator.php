@@ -7,13 +7,35 @@ namespace Jensovic\DbMySync;
  */
 class SqlGenerator
 {
+    public const DEFAULT_ENGINE = 'InnoDB';
+
     private array $env1Schema;
     private array $env2Schema;
 
-    public function __construct(array $env1Schema, array $env2Schema)
+    /** @var array<string, string> Storage engine for CREATE TABLE per target env ('' = server default) */
+    private array $engines;
+
+    /**
+     * @param array $options 'env1_engine' / 'env2_engine': engine used when a table is created
+     *                       in that environment. Empty string omits the ENGINE clause.
+     */
+    public function __construct(array $env1Schema, array $env2Schema, array $options = [])
     {
         $this->env1Schema = $env1Schema;
         $this->env2Schema = $env2Schema;
+        $this->engines = [
+            'env1' => self::sanitizeEngine($options['env1_engine'] ?? self::DEFAULT_ENGINE),
+            'env2' => self::sanitizeEngine($options['env2_engine'] ?? self::DEFAULT_ENGINE),
+        ];
+    }
+
+    /**
+     * Engine names end up verbatim in SQL - only plain identifiers are accepted.
+     */
+    public static function sanitizeEngine($engine): string
+    {
+        $engine = trim((string) $engine);
+        return preg_match('/^[A-Za-z][A-Za-z0-9_]{0,63}$/', $engine) ? $engine : '';
     }
 
     /**
@@ -202,14 +224,133 @@ class SqlGenerator
      */
     private function generateAddColumnSql(string $table, array $col, string $position = ''): string
     {
-        $nullable = $col['nullable'] ? 'NULL' : 'NOT NULL';
-        $default = '';
+        return $this->warningLines([$col])
+            . "ALTER TABLE `{$table}` ADD COLUMN " . $this->columnDefinition($col) . "{$position};";
+    }
 
-        if ($col['default'] !== null) {
-            $default = " DEFAULT " . $this->quoteDefault($col['default']);
+    /**
+     * Full column definition, built ONLY from what the source reports.
+     * Used by CREATE TABLE, ADD COLUMN and MODIFY COLUMN alike, so all three
+     * produce the same column. MODIFY replaces the whole definition, which is
+     * why nothing may be invented here: an added DEFAULT could never be removed.
+     */
+    public function columnDefinition(array $col): string
+    {
+        $type = $col['type'];
+        $def = "`{$col['name']}` {$type}";
+
+        if (self::isStringType($type)) {
+            if (!empty($col['charset'])) {
+                $def .= " CHARACTER SET {$col['charset']}";
+            }
+            if (!empty($col['collation'])) {
+                $def .= " COLLATE {$col['collation']}";
+            }
         }
 
-        return "ALTER TABLE `{$table}` ADD COLUMN `{$col['name']}` {$col['type']} {$nullable}{$default}{$position};";
+        $nullable = !empty($col['nullable']);
+        $def .= $nullable ? ' NULL' : ' NOT NULL';
+        $def .= $this->defaultClause($col, $nullable);
+        $def .= self::extraClause($col['extra'] ?? '');
+
+        if (isset($col['comment']) && $col['comment'] !== '') {
+            $def .= " COMMENT '" . str_replace(["\\", "'"], ["\\\\", "''"], $col['comment']) . "'";
+        }
+
+        return $def;
+    }
+
+    /**
+     * DEFAULT clause for a column, or '' when the column has no default.
+     */
+    private function defaultClause(array $col, bool $nullable): string
+    {
+        $raw = $col['default'] ?? null;
+
+        // MariaDB reports "no default" on a nullable column as the string NULL
+        if ($raw === null || strtoupper(trim((string) $raw)) === 'NULL') {
+            return '';
+        }
+
+        $raw = (string) $raw;
+        $extra = strtolower($col['extra'] ?? '');
+
+        if (self::isExpressionDefault($raw) || strpos($extra, 'default_generated') !== false) {
+            return ' DEFAULT ' . self::expressionDefault($raw);
+        }
+
+        return ' DEFAULT ' . $this->quoteDefault($raw);
+    }
+
+    /**
+     * Timestamp functions stay bare (DATETIME/TIMESTAMP require that form),
+     * every other expression must be parenthesized for MySQL 8 and MariaDB.
+     */
+    private static function expressionDefault(string $raw): string
+    {
+        $raw = trim($raw);
+
+        if (preg_match('/^(current_timestamp|now|localtime|localtimestamp)(\s*\(\s*\d*\s*\))?$/i', $raw)) {
+            return $raw;
+        }
+
+        if ($raw[0] === '(' && substr($raw, -1) === ')') {
+            return $raw;
+        }
+
+        return "({$raw})";
+    }
+
+    /**
+     * AUTO_INCREMENT and ON UPDATE from INFORMATION_SCHEMA.EXTRA.
+     * MariaDB: "on update current_timestamp()", MySQL 8: "DEFAULT_GENERATED on update CURRENT_TIMESTAMP".
+     */
+    public static function extraClause(?string $extra): string
+    {
+        $extra = (string) $extra;
+        $clause = '';
+
+        if (stripos($extra, 'auto_increment') !== false) {
+            $clause .= ' AUTO_INCREMENT';
+        }
+
+        if (preg_match('/on update\s+((?:current_timestamp|now|localtime|localtimestamp)(?:\s*\(\s*\d*\s*\))?)/i', $extra, $m)) {
+            $clause .= ' ON UPDATE ' . $m[1];
+        }
+
+        return $clause;
+    }
+
+    /**
+     * Things the generator cannot reproduce, as SQL comments in front of the statement.
+     */
+    private function warningLines(array $columns): string
+    {
+        $lines = [];
+        $commentsUnknown = false;
+
+        foreach ($columns as $col) {
+            $extra = strtolower($col['extra'] ?? '');
+            if (preg_match('/\b(virtual|stored|persistent) generated\b/', $extra)) {
+                $lines[] = "-- WARNING: `{$col['name']}` is a generated column; its expression is not "
+                    . "reported by the endpoint - add 'AS (...)' by hand";
+            }
+            if (!array_key_exists('comment', $col)) {
+                $commentsUnknown = true;
+            }
+        }
+
+        if ($commentsUnknown) {
+            $lines[] = "-- NOTE: this endpoint does not report column comments - existing comments "
+                . "are not carried over (update dbmysync-addin)";
+        }
+
+        return empty($lines) ? '' : implode("\n", $lines) . "\n";
+    }
+
+    public static function isStringType(string $type): bool
+    {
+        return (bool) preg_match('/^(var)?char\b|^(tiny|medium|long)?text\b|^enum\b|^set\b/i', trim($type));
     }
 
     /**
@@ -319,76 +460,17 @@ class SqlGenerator
         }
 
         if (!$sourceColumn) {
-            // Fallback: Build from diff data
-            $sourceKey = $targetEnv === 'env2' ? 'offline' : 'online';
-            $type = $diff['type'][$sourceKey] ?? 'VARCHAR(255)';
-            $nullable = (isset($diff['nullable']) && $diff['nullable'][$sourceKey]) ? 'NULL' : 'NOT NULL';
-            $default = '';
-
-            // For string types, always add DEFAULT
-            $isStringType = (stripos($type, 'varchar') !== false ||
-                            stripos($type, 'text') !== false ||
-                            stripos($type, 'char') !== false);
-
-            if (isset($diff['default'])) {
-                $defaultValue = $diff['default'][$sourceKey];
-                if ($defaultValue !== null) {
-                    $default = " DEFAULT " . $this->quoteDefault($defaultValue);
-                } elseif ($isStringType) {
-                    $default = " DEFAULT ''";
-                }
-            } elseif ($isStringType) {
-                $default = " DEFAULT ''";
-            }
-
-            $sql = "ALTER TABLE `{$table}` MODIFY COLUMN `{$colName}` {$type} {$nullable}{$default};";
-
-            $changes = [];
-            foreach ($diff as $prop => $values) {
-                $changes[] = "$prop: {$values['offline']} ? {$values['online']}";
-            }
-
-            return "-- Changes: " . implode(', ', $changes) . "\n-- WARNING: Built from diff (source column not in schema)\n" . $sql;
+            return "-- ERROR: column `{$colName}` not found in source table `{$table}` - nothing generated";
         }
 
-        // Build complete column definition from source
-        $type = $sourceColumn['type'];
-        $nullable = $sourceColumn['nullable'] ? 'NULL' : 'NOT NULL';
-
-        // ALWAYS add DEFAULT for string columns
-        $default = '';
-        $isStringType = (stripos($type, 'varchar') !== false ||
-                        stripos($type, 'text') !== false ||
-                        stripos($type, 'char') !== false);
-
-        if (array_key_exists('default', $sourceColumn) && $sourceColumn['default'] !== null) {
-            // Has a specific default value
-            $default = " DEFAULT " . $this->quoteDefault($sourceColumn['default']);
-        } elseif ($isStringType) {
-            // String type without default -> use empty string
-            $default = " DEFAULT ''";
-        }
-
-        // Add charset/collation if present
-        $charset = '';
-        if (!empty($sourceColumn['charset']) && $isStringType) {
-            $charset = " CHARACTER SET {$sourceColumn['charset']}";
-        }
-
-        $collation = '';
-        if (!empty($sourceColumn['collation']) && $isStringType) {
-            $collation = " COLLATE {$sourceColumn['collation']}";
-        }
-
-        $sql = "ALTER TABLE `{$table}` MODIFY COLUMN `{$colName}` {$type}{$charset}{$collation} {$nullable}{$default};";
-
-        // Add comment about what changed
         $changes = [];
         foreach ($diff as $prop => $values) {
-            $changes[] = "$prop: {$values['offline']} ? {$values['online']}";
+            $changes[] = "{$prop}: " . json_encode($values['offline']) . ' -> ' . json_encode($values['online']);
         }
 
-        return "-- Changes: " . implode(', ', $changes) . "\n" . $sql;
+        return "-- Changes: " . implode(', ', $changes) . "\n"
+            . $this->warningLines([$sourceColumn])
+            . "ALTER TABLE `{$table}` MODIFY COLUMN " . $this->columnDefinition($sourceColumn) . ";";
     }
 
     /**
@@ -442,6 +524,10 @@ class SqlGenerator
 
         // Handle numeric values
         if (is_numeric($value)) {
+            return $value;
+        }
+
+        if (preg_match("/^[bx]'[0-9a-f]*'$/i", $value)) {
             return $value;
         }
 
@@ -499,38 +585,8 @@ class SqlGenerator
         $sql = "CREATE TABLE `{$tableName}` (\n";
         $columnDefs = [];
 
-        // Add columns
-        foreach ($sourceTable['columns'] as $col) {
-            $def = "  `{$col['name']}` {$col['type']}";
-
-            // Add charset/collation for string types
-            if (!empty($col['charset']) && (stripos($col['type'], 'varchar') !== false ||
-                stripos($col['type'], 'text') !== false || stripos($col['type'], 'char') !== false)) {
-                $def .= " CHARACTER SET {$col['charset']}";
-            }
-            if (!empty($col['collation']) && (stripos($col['type'], 'varchar') !== false ||
-                stripos($col['type'], 'text') !== false || stripos($col['type'], 'char') !== false)) {
-                $def .= " COLLATE {$col['collation']}";
-            }
-
-            // Add nullable
-            $def .= $col['nullable'] ? ' NULL' : ' NOT NULL';
-
-            // Add default
-            if (array_key_exists('default', $col) && $col['default'] !== null) {
-                $def .= " DEFAULT " . $this->quoteDefault($col['default']);
-            } elseif ((stripos($col['type'], 'varchar') !== false ||
-                      stripos($col['type'], 'text') !== false ||
-                      stripos($col['type'], 'char') !== false)) {
-                $def .= " DEFAULT ''";
-            }
-
-            // Add auto_increment
-            if (!empty($col['extra']) && stripos($col['extra'], 'auto_increment') !== false) {
-                $def .= ' AUTO_INCREMENT';
-            }
-
-            $columnDefs[] = $def;
+        foreach ($this->sortByPosition($sourceTable['columns']) as $col) {
+            $columnDefs[] = '  ' . $this->columnDefinition($col);
         }
 
         $sql .= implode(",\n", $columnDefs);
@@ -548,7 +604,10 @@ class SqlGenerator
             }
         }
 
-        $sql .= "\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+        $targetEngine = $this->engines[$sourceEnv === 'env1' ? 'env2' : 'env1'];
+        $engineClause = $targetEngine !== '' ? " ENGINE={$targetEngine}" : '';
+        $sql .= "\n){$engineClause} DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+        $sql = $this->warningLines($sourceTable['columns']) . $sql;
 
         // Add foreign keys as separate ALTER TABLE statements (must be added after table creation)
         $fkStatements = [];

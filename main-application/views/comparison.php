@@ -7,7 +7,10 @@ $title = 'Comparison - ' . htmlspecialchars($pair['name']);
 use Jensovic\DbMySync\SqlGenerator;
 $sqlGenerator = null;
 if ($offlineSchema !== null && $onlineSchema !== null) {
-    $sqlGenerator = new SqlGenerator($offlineSchema, $onlineSchema);
+    $sqlGenerator = new SqlGenerator($offlineSchema, $onlineSchema, [
+        'env1_engine' => $pair['env1_engine'] ?? SqlGenerator::DEFAULT_ENGINE,
+        'env2_engine' => $pair['env2_engine'] ?? SqlGenerator::DEFAULT_ENGINE,
+    ]);
 }
 
 ob_start();

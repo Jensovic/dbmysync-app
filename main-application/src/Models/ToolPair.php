@@ -4,6 +4,7 @@ namespace Jensovic\DbMySync\Models;
 
 use PDO;
 use Jensovic\DbMySync\Database;
+use Jensovic\DbMySync\SqlGenerator;
 
 class ToolPair
 {
@@ -97,11 +98,11 @@ class ToolPair
     {
         $stmt = $this->db->prepare("
             INSERT INTO tool_pairs (
-                name, group_id, env1_name, env1_url, env1_secret,
-                env2_name, env2_url, env2_secret
+                name, group_id, env1_name, env1_url, env1_secret, env1_engine,
+                env2_name, env2_url, env2_secret, env2_engine
             ) VALUES (
-                :name, :group_id, :env1_name, :env1_url, :env1_secret,
-                :env2_name, :env2_url, :env2_secret
+                :name, :group_id, :env1_name, :env1_url, :env1_secret, :env1_engine,
+                :env2_name, :env2_url, :env2_secret, :env2_engine
             )
         ");
 
@@ -111,9 +112,11 @@ class ToolPair
             'env1_name' => $data['env1_name'] ?? 'Dev',
             'env1_url' => $data['env1_url'],
             'env1_secret' => $data['env1_secret'],
+            'env1_engine' => SqlGenerator::sanitizeEngine($data['env1_engine'] ?? SqlGenerator::DEFAULT_ENGINE),
             'env2_name' => $data['env2_name'] ?? 'Prod',
             'env2_url' => $data['env2_url'],
-            'env2_secret' => $data['env2_secret']
+            'env2_secret' => $data['env2_secret'],
+            'env2_engine' => SqlGenerator::sanitizeEngine($data['env2_engine'] ?? SqlGenerator::DEFAULT_ENGINE)
         ]);
 
         return (int) $this->db->lastInsertId();
@@ -131,9 +134,11 @@ class ToolPair
                 env1_name = :env1_name,
                 env1_url = :env1_url,
                 env1_secret = :env1_secret,
+                env1_engine = :env1_engine,
                 env2_name = :env2_name,
                 env2_url = :env2_url,
                 env2_secret = :env2_secret,
+                env2_engine = :env2_engine,
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = :id
         ");
@@ -145,9 +150,11 @@ class ToolPair
             'env1_name' => $data['env1_name'] ?? 'Dev',
             'env1_url' => $data['env1_url'],
             'env1_secret' => $data['env1_secret'],
+            'env1_engine' => SqlGenerator::sanitizeEngine($data['env1_engine'] ?? SqlGenerator::DEFAULT_ENGINE),
             'env2_name' => $data['env2_name'] ?? 'Prod',
             'env2_url' => $data['env2_url'],
-            'env2_secret' => $data['env2_secret']
+            'env2_secret' => $data['env2_secret'],
+            'env2_engine' => SqlGenerator::sanitizeEngine($data['env2_engine'] ?? SqlGenerator::DEFAULT_ENGINE)
         ]);
     }
 

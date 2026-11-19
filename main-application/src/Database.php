@@ -77,7 +77,9 @@ class Database
             'last_diff_count' => 'INTEGER',
             'last_diff_status' => 'TEXT',
             'last_diff_error' => 'TEXT',
-            'last_diff_checked_at' => 'DATETIME'
+            'last_diff_checked_at' => 'DATETIME',
+            'env1_engine' => "TEXT DEFAULT 'InnoDB'",
+            'env2_engine' => "TEXT DEFAULT 'InnoDB'"
         ] as $column => $type) {
             if (!$this->hasColumn($pdo, 'tool_pairs', $column)) {
                 $pdo->exec("ALTER TABLE tool_pairs ADD COLUMN {$column} {$type}");

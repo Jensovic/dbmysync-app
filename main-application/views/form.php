@@ -4,6 +4,25 @@ require_once __DIR__ . '/helpers.php';
 $isEdit = isset($pair);
 $title = $isEdit ? 'Edit Tool Pair' : 'Add Tool Pair';
 $groups = $groups ?? [];
+
+function engineSelect(string $field, string $envLabel, ?string $current): string
+{
+    $options = ['InnoDB' => 'InnoDB', 'MyISAM' => 'MyISAM', 'Aria' => 'Aria', '' => '(server default - no ENGINE clause)'];
+    $current = (string) $current;
+    if (!array_key_exists($current, $options)) {
+        $options[$current] = $current;
+    }
+
+    $html = '<div class="form-group"><label for="' . $field . '">' . htmlspecialchars($envLabel) . ' Storage Engine</label>'
+        . '<select id="' . $field . '" name="' . $field . '">';
+    foreach ($options as $value => $label) {
+        $selected = (string) $value === $current ? ' selected' : '';
+        $html .= '<option value="' . htmlspecialchars((string) $value) . '"' . $selected . '>' . htmlspecialchars($label) . '</option>';
+    }
+
+    return $html . '</select><small style="color: #666;">Used when generated SQL creates a table in this environment.</small></div>';
+}
+
 ob_start();
 ?>
 
@@ -69,6 +88,8 @@ ob_start();
                    placeholder="your-secret-key" required>
         </div>
 
+        <?= engineSelect('env1_engine', 'Environment 1', $pair['env1_engine'] ?? \Jensovic\DbMySync\SqlGenerator::DEFAULT_ENGINE) ?>
+
         <h3 style="margin-top: 30px; margin-bottom: 15px; color: #2c3e50;">Environment 2</h3>
 
         <div class="form-group">
@@ -94,7 +115,9 @@ ob_start();
                    value="<?= htmlspecialchars($pair['env2_secret'] ?? '') ?>"
                    placeholder="your-secret-key" required>
         </div>
-        
+
+        <?= engineSelect('env2_engine', 'Environment 2', $pair['env2_engine'] ?? \Jensovic\DbMySync\SqlGenerator::DEFAULT_ENGINE) ?>
+
         <div style="margin-top: 30px;">
             <button type="submit" class="btn btn-success">
                 <?= icon('save') ?><?= $isEdit ? 'Update' : 'Create' ?> Tool Pair
