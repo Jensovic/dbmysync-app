@@ -15,9 +15,10 @@ Compare and synchronize MySQL database structures across different environments 
 ## Installation
 
 1. Clone or download this repository
-2. Install dependencies:
+2. Install dependencies, then check them for known vulnerabilities:
 ```bash
 composer install
+composer audit
 ```
 
 3. Start the application:
@@ -29,7 +30,7 @@ php -S localhost:8000 -t public
 
 ## Requirements
 
-- PHP 8.2 or higher
+- PHP 8.1 or higher
 - SQLite extension (usually included)
 - DbMySync Endpoint installed in your projects
 

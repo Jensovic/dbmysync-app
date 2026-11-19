@@ -4,7 +4,7 @@
 
 DbMySync is a powerful PHP-based tool for comparing MySQL database schemas between different environments (Dev, Staging, Production) and generating SQL statements to synchronize them.
 
-![PHP](https://img.shields.io/badge/PHP-7.4%2B-blue)
+![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue)
 ![MySQL](https://img.shields.io/badge/MySQL-5.7%2B-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -74,7 +74,7 @@ non-integer types such as `varchar(50)` vs. `varchar(255)`.
 ## 🚀 Installation
 
 ### Requirements
-- PHP 7.4 or higher
+- PHP 8.1 or higher (main application and endpoint; PHP 7 is no longer supported)
 - MySQL 5.7 or higher
 - Composer
 - Apache/Nginx with mod_rewrite
@@ -98,6 +98,10 @@ composer install
 cd ../endpoint
 composer install
 ```
+
+`composer.lock` is not versioned, so `composer install` resolves the newest
+versions that fit the PHP version running Composer. Run it with the PHP version
+the server uses and check the result with `composer audit`.
 
 ### 3. Configure Database
 
@@ -140,7 +144,7 @@ server {
     }
     
     location ~ \.php$ {
-        fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+        fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
         fastcgi_index index.php;
         include fastcgi_params;
     }
