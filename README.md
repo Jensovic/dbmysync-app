@@ -62,14 +62,15 @@ boolean, and MySQL 8 keeps it), integer widths with `ZEROFILL`, and any length o
 non-integer types such as `varchar(50)` vs. `varchar(255)`.
 
 ### Indexes
-- ✅ Missing indexes
-- ✅ Different index types (UNIQUE, KEY)
-- ✅ Different indexed columns
+- ✅ Missing indexes (matched by name)
+- ❌ Same index name with different columns or uniqueness
 
 ### Foreign Keys
-- ✅ Missing foreign keys
-- ✅ Different referenced tables/columns
-- ✅ Different ON DELETE/UPDATE actions
+- ✅ Missing foreign keys (matched by name)
+- ❌ Different referenced tables/columns, ON DELETE/UPDATE actions
+
+See [docs/known-limitations.md](docs/known-limitations.md) for everything that is
+not (yet) detected or generated.
 
 ## 🚀 Installation
 
@@ -187,8 +188,12 @@ dbmysync-app/
 │   ├── src/             # API logic
 │   └── config/          # Database configuration
 │
-└── test-installation/   # Test scripts
+├── test-installation/   # Test scripts
+└── docs/                # Developer documentation
 ```
+
+Detailed developer documentation (architecture, endpoint API, comparison and
+SQL rules, operations) lives in [docs/](docs/README.md).
 
 ## 🔒 Security
 
