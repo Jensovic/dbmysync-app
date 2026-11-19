@@ -118,16 +118,24 @@ tr:hover { background: #f8f9fa; }
     font-weight: 500;
     color: #2c3e50;
 }
-.form-group input {
+.form-group input,
+.form-group select {
     width: 100%;
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
+    font-family: inherit;
+    background-color: #fff;
 }
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus {
     outline: none;
     border-color: #3498db;
+}
+.form-group small {
+    display: block;
+    margin-top: 5px;
 }
 
 .alert {
