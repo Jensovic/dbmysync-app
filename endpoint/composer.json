@@ -1,6 +1,25 @@
 {
     "name": "jensovic/dbmysync-addin",
-    "description": "Database synchronization endpoint - Provides REST API to expose MySQL database structure and keys for comparison",
+    "description": "Tiny read-only HTTP endpoint that exposes a MySQL/MariaDB schema (tables, columns, keys, indexes) behind a secret - so DbMySync can diff local and production databases on shared hosting without SSH or remote MySQL access.",
+    "keywords": [
+        "mysql",
+        "mariadb",
+        "schema",
+        "schema-diff",
+        "schema-comparison",
+        "database-diff",
+        "database-migration",
+        "migration",
+        "sync",
+        "database-sync",
+        "information-schema",
+        "shared-hosting",
+        "deployment",
+        "devops",
+        "endpoint",
+        "rest-api"
+    ],
+    "homepage": "https://github.com/Jensovic/dbmysync-addin",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -9,6 +28,11 @@
             "email": "jensovic@gmail.com"
         }
     ],
+    "support": {
+        "issues": "https://github.com/Jensovic/dbmysync-addin/issues",
+        "source": "https://github.com/Jensovic/dbmysync-addin",
+        "docs": "https://github.com/Jensovic/dbmysync-app/tree/main/docs"
+    },
     "require": {
         "php": ">=8.1"
     },
@@ -28,4 +52,3 @@
     "minimum-stability": "stable",
     "prefer-stable": true
 }
-

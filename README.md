@@ -1,12 +1,30 @@
 # 🔄 DbMySync
 
-**Database Schema Comparison & Synchronization Tool**
-
-DbMySync is a powerful PHP-based tool for comparing MySQL database schemas between different environments (Dev, Staging, Production) and generating SQL statements to synchronize them.
+**Compare MySQL/MariaDB schemas between local and production - over plain HTTP -
+and get the `ALTER TABLE` statements to fix every difference.**
 
 ![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue)
-![MySQL](https://img.shields.io/badge/MySQL-5.7%2B-orange)
+![MySQL](https://img.shields.io/badge/MySQL%20%7C%20MariaDB-5.7%2B-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
+[![Endpoint on Packagist](https://img.shields.io/packagist/v/jensovic/dbmysync-addin?label=endpoint)](https://packagist.org/packages/jensovic/dbmysync-addin)
+
+You add a column on your machine, deploy the code, and production breaks because
+the column is missing there. On shared hosting you have no SSH and no remote
+MySQL access, so you cannot simply compare the two databases.
+
+DbMySync solves that with two parts:
+
+1. **[dbmysync-addin](https://github.com/Jensovic/dbmysync-addin)** - a tiny,
+   read-only endpoint (`composer require jensovic/dbmysync-addin`) in each of
+   your projects. It reports the database structure as JSON, protected by a
+   secret.
+2. **This dashboard** - runs locally, asks both endpoints of a project, shows
+   every missing table, column, index and key, and generates the SQL to align
+   them. Nothing is executed automatically: you review and run it.
+
+Good for: PHP projects on shared hosting (IONOS, Strato, all-inkl, ...), teams
+without a migration framework, and everyone who has ever forgotten to migrate a
+column. Table contents are never transferred.
 
 ## ✨ Features
 

@@ -1,6 +1,25 @@
 {
     "name": "jensovic/dbmysync",
-    "description": "Database synchronization tool - Compare and sync MySQL databases across environments",
+    "description": "Compare MySQL/MariaDB schemas between local and production over HTTP and get ready-to-run ALTER/CREATE TABLE statements - built for shared hosting without SSH or remote database access.",
+    "keywords": [
+        "mysql",
+        "mariadb",
+        "schema",
+        "schema-diff",
+        "schema-comparison",
+        "database-diff",
+        "database-migration",
+        "migration",
+        "sync",
+        "database-sync",
+        "alter-table",
+        "sql-generator",
+        "shared-hosting",
+        "deployment",
+        "devops",
+        "dashboard"
+    ],
+    "homepage": "https://github.com/Jensovic/dbmysync-app",
     "type": "project",
     "license": "MIT",
     "authors": [
@@ -9,6 +28,11 @@
             "email": "jensovic@gmail.com"
         }
     ],
+    "support": {
+        "issues": "https://github.com/Jensovic/dbmysync-app/issues",
+        "source": "https://github.com/Jensovic/dbmysync-app",
+        "docs": "https://github.com/Jensovic/dbmysync-app/tree/main/docs"
+    },
     "require": {
         "php": ">=8.1",
         "ext-pdo": "*",
@@ -32,4 +56,3 @@
     "minimum-stability": "stable",
     "prefer-stable": true
 }
-
